@@ -16,15 +16,14 @@
 #include<algorithm>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
 #include <time.h>
-
+#define h 280
+#define w 320
 int main()
 {
 //Image variables
 CvCapture* capture = cvCaptureFromCAM(0);
-
+//IplImage* img=cvLoadImage("F:\\t4.jpg");
 IplImage* img = cvQueryFrame(capture);
 
 IplImage* rimg=cvCreateImage(cvGetSize(img),8,3);
@@ -59,9 +58,8 @@ while(1)
 
 
 //Showing the images
- // cvErode(thresh, rimg, 0 ,1 );    // NIE DZIAŁA :(
-cvSmooth(thresh, thresh, CV_GAUSSIAN, 11, 11, 2, 2);
-     cvInRangeS(thresh,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);  
+
+     cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);  
  
 cvShowImage("Original Image",rimg);
 cvShowImage("Thresholded Image",thresh);
