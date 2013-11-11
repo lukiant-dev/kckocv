@@ -12,11 +12,12 @@
 #include <string.h>
 #include <unistd.h>
  #include<opencv2/opencv.hpp>
-
+#include <opencv2/imgproc/imgproc.hpp>
 #include<vector>
 #include<algorithm>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <time.h>
 #define OBJB1 0.1665 // pierwszy
 #define OBJB2 0.0004 // drugi
 #define OBJB3 0.0001 // trzeci moment Hu dla kwadratu
@@ -24,31 +25,59 @@
 using namespace std;
  
 int main(int argc, const char* argv[]) {
- 
-    CvCapture* capture = cvCaptureFromCAM(0);
+ time_t start, end;
+CvCapture* capture = cvCaptureFromCAM(0);
+    IplImage* img = cvQueryFrame(capture);
+
+IplImage* rimg=cvCreateImage(cvGetSize(img),8,3);
+IplImage* hsvimg=cvCreateImage(cvGetSize(img),8,3);
+IplImage* thresh=cvCreateImage(cvGetSize(img),8,1);
+        IplImage *kopia = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+//Windows
+cvNamedWindow("Original Image",CV_WINDOW_AUTOSIZE);
+cvNamedWindow("Color Image",CV_WINDOW_AUTOSIZE);
+cvNamedWindow("Thresholded Image",CV_WINDOW_AUTOSIZE);
+cvNamedWindow("cnt",CV_WINDOW_AUTOSIZE);
+ cvNamedWindow("afterEffects", CV_WINDOW_AUTOSIZE);
+//Variables for trackbar
+int h1=0;int s1=0;int v1=0;
+int h2=0;int s2=0;int v2=0;
+//Creating the trackbars
+cvCreateTrackbar("H1","cnt",&h1,255,0);
+cvCreateTrackbar("H2","cnt",&h2,255,0);
+cvCreateTrackbar("S1","cnt",&s1,255,0);
+cvCreateTrackbar("S2","cnt",&s2,255,0);
+cvCreateTrackbar("V1","cnt",&v1,255,0);
+cvCreateTrackbar("V2","cnt",&v2,255,0);
+
 // std::cout << "jest okej!" << endl;
-    cvNamedWindow("afterEffects", CV_WINDOW_AUTOSIZE);
+    
  
     CvScalar colorB = CV_RGB( 0, 255, 0 );
  
     int minimalnaWielkosc = 10000, pole = 0;
     float iloraz = 1;
- 
+ time(&start);
+int counter=0;
+
+cvCvtColor(rimg,hsvimg,CV_BGR2HSV);
     while (1) {
  
-        IplImage* frame = cvQueryFrame(capture);
+        img = cvQueryFrame(capture);
  
      //   frame = ContrastBrightness(frame, 70, 40);
  
-        minimalnaWielkosc = (640 / 12) * (480 / 12);
+cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);  
+//cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),hsvimg);   
 
-        IplImage *kopia = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
+
  
-        cvFlip(frame, frame, 2);
+
+
  
-        cvCvtColor(frame, kopia, CV_RGB2GRAY);
+      //  cvCvtColor(img, kopia, CV_RGB2GRAY);
  
-        cvSmooth(kopia, kopia, CV_GAUSSIAN, 11, 11, 2, 2);
+        cvSmooth(thresh, kopia, CV_GAUSSIAN, 11, 11, 2, 2);
         cvCanny(kopia, kopia, 10, 60, 3);
  
         CvMemStorage* storage = cvCreateMemStorage(0);
@@ -61,6 +90,7 @@ int main(int argc, const char* argv[]) {
         bool elem1 = 1;
         int rX1 = 0, rY1 = 0;
  // std::cout << "jest okej!" << endl;
+contour = 0;
         for (int i = 0; contour != 0; contour = contour->h_next, i++) {
  
             static CvMoments* moments = new CvMoments();
@@ -79,7 +109,7 @@ int main(int argc, const char* argv[]) {
                     && (abs(huMoments->hu1 - OBJB1) < 0.5)
                     && (abs(huMoments->hu2 - OBJB2) < 0.005)) { // kwadrat
   //std::cout << "jest okej!" << endl;
-                cvDrawContours(frame, contour, colorB, colorB, CV_FILLED);
+                cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
  std::cout << "win!!"<< endl;
                 if (elem1 == 0) {
  
@@ -107,23 +137,35 @@ int main(int argc, const char* argv[]) {
             cvReleaseMemStorage(&storage);
  
         }
- 
-        cvShowImage("afterEffects", kopia);
+ 	cvShowImage("Original Image",img);
+	cvShowImage("Color Image",hsvimg);
 
+	cvShowImage("Thresholded Image",thresh);
+        cvShowImage("afterEffects", kopia);
+//Stop the clock and show FPS
+time(&end);
+++counter;
+double sec=difftime(end,start);
+double fps=counter/sec;
+printf("\n%lf",fps);
       //  cvReleaseImage(&kopia);
       //  cvReleaseImage(&frame);
 //  cout << "co jest 5" << endl;
         if ((cvWaitKey(10) & 255) == 27) { // Wciśnięcie ESC kończy działanie programu
-   cvReleaseImage(&kopia);
-       cvReleaseImage(&frame);
+ /*  cvReleaseImage(&kopia);
+     
 cvReleaseCapture(&capture);
+cvReleaseImage(&img);
+cvReleaseImage(&thresh);
+cvReleaseImage(&rimg);
+cvReleaseImage(&hsvimg);*/
             break;
  
         }
      
     }
  //cvReleaseCapture(&capture);
-
+	
     cvDestroyWindow("mywindow");
     cvDestroyWindow("afrerEffects");
  
