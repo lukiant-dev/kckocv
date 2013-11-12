@@ -23,9 +23,9 @@
 #define OBJB2 0.0004 // drugi
 #define OBJB3 0.0001 // trzeci moment Hu dla kwadratu
 int x = 360;
-int y = 360;
-int width = 200;
-int height = 200;
+int y = 160;
+int width = 300;
+int height = 300;
 
 using namespace std;
 using namespace cv;
@@ -103,12 +103,15 @@ while (1) {
  	cvErode(kopia,kopia,kernel,1);
 //	erode( kopia, kopia, element );
 
-	for(int rows = y; rows < height; rows++) {
+cvSetImageROI(img,cvRect(x,y,width,height));
+cvCopy( img, kopia2 );
+cvResetImageROI( img );
+/*	for(int rows = y; rows < height; rows++) {
     		for(int cols = x; rows < width; cols++) {        
         		kopia2->imageData[(rows-y)*kopia2->width + (cols-x)] = img->imageData[int(rows*img->width + cols)];
     		}
 	}
-        CvMemStorage* storage = cvCreateMemStorage(0);
+*/        CvMemStorage* storage = cvCreateMemStorage(0);
         CvSeq* contour = 0;
 	// finding contour MAGIC! ^^
         cvFindContours(kopia, storage, &contour, sizeof(CvContour),
