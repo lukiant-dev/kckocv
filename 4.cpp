@@ -50,15 +50,15 @@ IplImage* img = cvQueryFrame(capture);
 
 // Setting ROI for smaller image
 cvSetImageROI(img,cvRect(x,y,width,height));
-IplImage *kopia2 = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
-cvResetImageROI( img );
+IplImage *kopia2 = cvCreateImage(cvGetSize(img), 8, 1);
+
 
 // other images declarations				1 means greyscale 
 IplImage* rimg		= cvCreateImage(cvGetSize(img),8,3);
 IplImage* hsvimg	= cvCreateImage(cvGetSize(img),8,3);
 IplImage* thresh	= cvCreateImage(cvGetSize(img),8,1);
-IplImage* kopia 	= cvCreateImage(cvGetSize(img),8,1);
-
+IplImage* kopia 	= cvCreateImage(cvGetSize(img),8,3);
+cvResetImageROI( img );
 
 //Windows for displaying images and trackbars
 cvNamedWindow("Original Image",CV_WINDOW_AUTOSIZE);
@@ -94,18 +94,22 @@ while (1) {
 	img = cvQueryFrame(capture);
  
      
- 
+ 	cvSetImageROI(img,cvRect(x,y,width,height));
 	cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);  
+	cvResetImageROI( img );
+	
 	//cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),hsvimg);   
  
-        cvSmooth(thresh, thresh, CV_GAUSSIAN, 15, 15, 2, 2);
-	cvCanny(thresh, kopia, 10, 20, 3);
- 	cvErode(kopia,kopia,kernel,1);
+   //     cvSmooth(thresh, thresh, CV_GAUSSIAN, 15, 15, 2, 2);
+	//cvCanny(thresh, kopia, 10, 20, 3);
+ 	//cvErode(kopia,kopia,kernel,1);
 //	erode( kopia, kopia, element );
 
 cvSetImageROI(img,cvRect(x,y,width,height));
-cvCopy( img, kopia2 );
+//cvCopy( img, kopia );
 cvResetImageROI( img );
+
+cvCopy(thresh, kopia2);
 /*	for(int rows = y; rows < height; rows++) {
     		for(int cols = x; rows < width; cols++) {        
         		kopia2->imageData[(rows-y)*kopia2->width + (cols-x)] = img->imageData[int(rows*img->width + cols)];
@@ -114,7 +118,7 @@ cvResetImageROI( img );
 */        CvMemStorage* storage = cvCreateMemStorage(0);
         CvSeq* contour = 0;
 	// finding contour MAGIC! ^^
-        cvFindContours(kopia, storage, &contour, sizeof(CvContour),
+        cvFindContours(kopia2, storage, &contour, sizeof(CvContour),
                 CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
  
         bool elem1 = 1;
@@ -122,12 +126,12 @@ cvResetImageROI( img );
  	
 	contour = 0;
         for (int i = 0; contour != 0; contour = contour->h_next, i++) {
- 
+ 		cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
             static CvMoments* moments = new CvMoments();
             cvMoments(contour, moments);
             static CvHuMoments* huMoments = new CvHuMoments();
             cvGetHuMoments(moments, huMoments);
- 
+ 		printf("hu1: %f\n", huMoments->hu1); 
             CvRect r = cvBoundingRect(contour, 1);
  
             iloraz = (float) (abs(r.width - r.height))
@@ -178,7 +182,7 @@ cvResetImageROI( img );
 	++counter;
 	sec=difftime(end,start);
 	fps=counter/sec;
-	printf("\n%lf",fps);
+//	printf("\n%lf",fps);
       
 	// ESC key ends program
         if ((cvWaitKey(10) & 255) == 27) { 
