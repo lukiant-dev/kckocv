@@ -90,7 +90,7 @@ int counter=0;
 
 
 while (1) {
- 
+ 	cvSet(kopia, cvScalar(0,0,0));
 	img = cvQueryFrame(capture);
  
      
