@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
- #include<opencv2/opencv.hpp>
+ #include <opencv2/opencv.hpp>
 
 #include<vector>
 #include<algorithm>
@@ -26,11 +26,10 @@
 
 int y = 75;
 
-int width = 75;
+int width = 300;
 
-int height = 75;
+int height = 300;
 
-int add = 150;
 
 
 using namespace std;
@@ -47,11 +46,17 @@ kernel = cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL);
 CvCapture* capture = cvCaptureFromCAM(0);
     IplImage* img = cvQueryFrame(capture);
 
+
 IplImage* rimg=cvCreateImage(cvGetSize(img),8,3);
 IplImage* hsvimg=cvCreateImage(cvGetSize(img),8,3);
 IplImage* thresh=cvCreateImage(cvGetSize(img),8,1);
         IplImage *kopia = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-IplImage *kopia2 = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+
+cvSetImageROI(img,cvRect(x,y,width,height));
+IplImage *kopia2 = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
+//cvResetImageROI( img );
+
+
 //Windows
 //cvSetImageROI(img,cvRect(x,y,width,height));
 
@@ -96,10 +101,10 @@ cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
  // Crop Original Image without changing the ROI
 for(int rows = y; rows < height; rows++) {
     for(int cols = x; rows < width; cols++) {        
-        kopia2->imageData[(rows-y)*kopia2->widthStep + (cols-x)] = img[rows*img + cols];
+        kopia2->imageData[(rows-y)*kopia2->width + (cols-x)] = img->imageData[int(rows*img->width + cols)];
     }
 }
-cvCopy(kopia2, img);
+//cvCopy(kopia2, img);
 
 
  
@@ -108,7 +113,7 @@ cvCopy(kopia2, img);
         cvSmooth(thresh, thresh, CV_GAUSSIAN, 15, 15, 2, 2);
     cvCanny(thresh, kopia, 10, 20, 3);
  //	cvErode(kopia,kopia,kernel,1);
-	erode( kopia, kopia, element );
+//	erode( kopia, kopia, element );
         CvMemStorage* storage = cvCreateMemStorage(0);
         CvSeq* contour = 0;
 
