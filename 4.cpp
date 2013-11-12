@@ -100,7 +100,7 @@ while (1) {
 	
 	//cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),hsvimg);   
  
-   //     cvSmooth(thresh, thresh, CV_GAUSSIAN, 15, 15, 2, 2);
+        cvSmooth(thresh, thresh, CV_GAUSSIAN, 15, 15, 2, 2);
 	//cvCanny(thresh, kopia, 10, 20, 3);
  	//cvErode(kopia,kopia,kernel,1);
 //	erode( kopia, kopia, element );
@@ -124,14 +124,14 @@ cvCopy(thresh, kopia2);
         bool elem1 = 1;
         int rX1 = 0, rY1 = 0;
  	
-	contour = 0;
+	//contour = 0;
         for (int i = 0; contour != 0; contour = contour->h_next, i++) {
  		cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
             static CvMoments* moments = new CvMoments();
             cvMoments(contour, moments);
             static CvHuMoments* huMoments = new CvHuMoments();
             cvGetHuMoments(moments, huMoments);
- 		printf("hu1: %f\n", huMoments->hu1); 
+ 		//printf("hu1: %f\n", huMoments->hu1); 
             CvRect r = cvBoundingRect(contour, 1);
  
             iloraz = (float) (abs(r.width - r.height))
@@ -142,7 +142,7 @@ cvCopy(thresh, kopia2);
             if ((pole > minimalnaWielkosc) && (iloraz < 0.4)
                     && (abs(huMoments->hu1 - OBJB1) < 0.5)
                     && (abs(huMoments->hu2 - OBJB2) < 0.005)) { // kwadrat
-  
+  		printf("kwadrat!!!"); 
                 cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
  
                 if (elem1 == 0) {
