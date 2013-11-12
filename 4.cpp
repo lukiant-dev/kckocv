@@ -1,5 +1,6 @@
 
-#include <opencv/highgui.h>
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
 #include <iostream>
 #include <string>
 #include <ctime>
@@ -12,7 +13,7 @@
 #include <string.h>
 #include <unistd.h>
  #include<opencv2/opencv.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+
 #include<vector>
 #include<algorithm>
 #include <X11/Xlib.h>
@@ -21,11 +22,28 @@
 #define OBJB1 0.1665 // pierwszy
 #define OBJB2 0.0004 // drugi
 #define OBJB3 0.0001 // trzeci moment Hu dla kwadratu
- 
+  int x = 155;
+
+int y = 75;
+
+int width = 75;
+
+int height = 75;
+
+int add = 150;
+
+
 using namespace std;
- 
+using namespace cv;
 int main(int argc, const char* argv[]) {
  time_t start, end;
+  Mat element = getStructuringElement( MORPH_RECT,
+                                       Size( 5, 5 ),
+                                       Point( 2, 2 ) );
+IplConvKernel*	kernel;
+kernel = cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL);
+
+
 CvCapture* capture = cvCaptureFromCAM(0);
     IplImage* img = cvQueryFrame(capture);
 
@@ -33,7 +51,11 @@ IplImage* rimg=cvCreateImage(cvGetSize(img),8,3);
 IplImage* hsvimg=cvCreateImage(cvGetSize(img),8,3);
 IplImage* thresh=cvCreateImage(cvGetSize(img),8,1);
         IplImage *kopia = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+IplImage *kopia2 = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
 //Windows
+//cvSetImageROI(img,cvRect(x,y,width,height));
+
+
 cvNamedWindow("Original Image",CV_WINDOW_AUTOSIZE);
 cvNamedWindow("Color Image",CV_WINDOW_AUTOSIZE);
 cvNamedWindow("Thresholded Image",CV_WINDOW_AUTOSIZE);
@@ -71,15 +93,22 @@ cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
 //cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),hsvimg);   
 
 
- 
+ // Crop Original Image without changing the ROI
+for(int rows = y; rows < height; rows++) {
+    for(int cols = x; rows < width; cols++) {        
+        kopia2->imageData[(rows-y)*kopia2->widthStep + (cols-x)] = img[rows*img + cols];
+    }
+}
+cvCopy(kopia2, img);
 
 
  
       //  cvCvtColor(img, kopia, CV_RGB2GRAY);
  
-        cvSmooth(thresh, kopia, CV_GAUSSIAN, 11, 11, 2, 2);
-        cvCanny(kopia, kopia, 10, 60, 3);
- 
+        cvSmooth(thresh, thresh, CV_GAUSSIAN, 15, 15, 2, 2);
+    cvCanny(thresh, kopia, 10, 20, 3);
+ //	cvErode(kopia,kopia,kernel,1);
+	erode( kopia, kopia, element );
         CvMemStorage* storage = cvCreateMemStorage(0);
         CvSeq* contour = 0;
 
@@ -138,7 +167,7 @@ contour = 0;
  
         }
  	cvShowImage("Original Image",img);
-	cvShowImage("Color Image",hsvimg);
+	cvShowImage("Color Image",kopia2);
 
 	cvShowImage("Thresholded Image",thresh);
         cvShowImage("afterEffects", kopia);
