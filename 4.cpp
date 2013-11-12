@@ -22,13 +22,13 @@
 #define OBJB1 0.1665 // pierwszy
 #define OBJB2 0.0004 // drugi
 #define OBJB3 0.0001 // trzeci moment Hu dla kwadratu
-  int x = 155;
+  int x = 300;
 
-int y = 75;
+int y = 300;
 
-int width = 300;
+int width = 150;
 
-int height = 300;
+int height = 150;
 
 
 
@@ -46,15 +46,14 @@ kernel = cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL);
 CvCapture* capture = cvCaptureFromCAM(0);
     IplImage* img = cvQueryFrame(capture);
 
+cvSetImageROI(img,cvRect(x,y,width,height));
+IplImage *kopia2 = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
+cvResetImageROI( img );
 
 IplImage* rimg=cvCreateImage(cvGetSize(img),8,3);
 IplImage* hsvimg=cvCreateImage(cvGetSize(img),8,3);
 IplImage* thresh=cvCreateImage(cvGetSize(img),8,1);
         IplImage *kopia = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-
-cvSetImageROI(img,cvRect(x,y,width,height));
-IplImage *kopia2 = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
-//cvResetImageROI( img );
 
 
 //Windows
@@ -99,11 +98,7 @@ cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
 
 
  // Crop Original Image without changing the ROI
-for(int rows = y; rows < height; rows++) {
-    for(int cols = x; rows < width; cols++) {        
-        kopia2->imageData[(rows-y)*kopia2->width + (cols-x)] = img->imageData[int(rows*img->width + cols)];
-    }
-}
+
 //cvCopy(kopia2, img);
 
 
@@ -114,6 +109,13 @@ for(int rows = y; rows < height; rows++) {
     cvCanny(thresh, kopia, 10, 20, 3);
  //	cvErode(kopia,kopia,kernel,1);
 //	erode( kopia, kopia, element );
+
+
+for(int rows = y; rows < height; rows++) {
+    for(int cols = x; rows < width; cols++) {        
+        kopia2->imageData[(rows-y)*kopia2->width + (cols-x)] = img->imageData[int(rows*img->width + cols)];
+    }
+}
         CvMemStorage* storage = cvCreateMemStorage(0);
         CvSeq* contour = 0;
 
