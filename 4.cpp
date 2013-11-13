@@ -36,6 +36,8 @@ int main(int argc, const char* argv[]) {
 time_t start, end;
 double sec,fps;
 
+float huHand[3];
+
 // erosion element
 Mat element = getStructuringElement( MORPH_RECT,
                                        Size( 5, 5 ),
@@ -94,13 +96,13 @@ while (1) {
  	cvSet(kopia, cvScalar(0,0,0));
 	rimg = cvQueryFrame(capture);
  //	cvAbsDiff(rimg, img, rimg);
-     
+     	
  	cvSetImageROI(rimg,cvRect(x,y,width,height));
 	cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);  
 	cvResetImageROI( rimg );
 	
 	//cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),hsvimg);   
- 
+ 	
         cvSmooth(thresh, thresh, CV_MEDIAN, 7, 7);
 	//cvCanny(thresh, kopia, 10, 20, 3);
  	cvErode(thresh,thresh,kernel,1);
@@ -125,16 +127,16 @@ cvCopy(thresh, kopia2);
  
         bool elem1 = 1;
         int rX1 = 0, rY1 = 0;
- 	
+  static CvHuMoments* huMoments = new CvHuMoments();	
 	//contour = 0;
         for (int i = 0; contour != 0; contour = contour->h_next, i++) {
  		cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
 
 // convex defects i hull ! 
-
+		printf("i: %d \n", i);
             static CvMoments* moments = new CvMoments();
             cvMoments(contour, moments);
-            static CvHuMoments* huMoments = new CvHuMoments();
+           
             cvGetHuMoments(moments, huMoments);
  		//printf("hu1: %f\n", huMoments->hu1); 
             CvRect r = cvBoundingRect(contour, 1);
@@ -174,7 +176,7 @@ cvCopy(thresh, kopia2);
             }
  
             cvReleaseMemStorage(&storage);
- 
+       
         }
 	//displaying images
  	cvShowImage("Original Image",rimg);
@@ -200,6 +202,19 @@ cvCopy(thresh, kopia2);
 		cvReleaseImage(&hsvimg);*/
                 break;
  	}
+  if ((cvWaitKey(10) & 255) == 32) { 
+ 		huHand[0]= huMoments->hu1;
+printf("huHand[0]: %f\n", huHand[0]);
+		huHand[1]= huMoments->hu2;
+printf("huHand[1]: %f\n", huHand[1]);
+		huHand[2]= huMoments->hu3;
+printf("huHand[2]: %f\n", huHand[2]);
+     
+		
+            
+ 	}
+
+
      
 } //while end
 
