@@ -133,10 +133,20 @@ cvCopy(thresh, kopia2);
  		cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
 
 // convex defects i hull ! 
-		printf("i: %d \n", i);
+		
             static CvMoments* moments = new CvMoments();
             cvMoments(contour, moments);
-           
+            if ((cvWaitKey(10) & 255) == 32) { 
+ 		huHand[0]= huMoments->hu1;
+printf("huHand[0]: %f\n", huHand[0]);
+		huHand[1]= huMoments->hu2;
+printf("huHand[1]: %f\n", huHand[1]);
+		huHand[2]= huMoments->hu3;
+printf("huHand[2]: %f\n", huHand[2]);
+     
+		
+            
+ 	}
             cvGetHuMoments(moments, huMoments);
  		//printf("hu1: %f\n", huMoments->hu1); 
             CvRect r = cvBoundingRect(contour, 1);
@@ -202,17 +212,7 @@ cvCopy(thresh, kopia2);
 		cvReleaseImage(&hsvimg);*/
                 break;
  	}
-  if ((cvWaitKey(10) & 255) == 32) { 
- 		huHand[0]= huMoments->hu1;
-printf("huHand[0]: %f\n", huHand[0]);
-		huHand[1]= huMoments->hu2;
-printf("huHand[1]: %f\n", huHand[1]);
-		huHand[2]= huMoments->hu3;
-printf("huHand[2]: %f\n", huHand[2]);
-     
-		
-            
- 	}
+ 
 
 
      
