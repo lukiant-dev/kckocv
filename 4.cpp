@@ -1,6 +1,6 @@
 
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <string>
 #include <ctime>
@@ -89,25 +89,27 @@ time(&start);
 int counter=0;
 
 
+
 while (1) {
  	cvSet(kopia, cvScalar(0,0,0));
-	img = cvQueryFrame(capture);
- 
+	rimg = cvQueryFrame(capture);
+ //	cvAbsDiff(rimg, img, rimg);
      
- 	cvSetImageROI(img,cvRect(x,y,width,height));
-	cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);  
-	cvResetImageROI( img );
+ 	cvSetImageROI(rimg,cvRect(x,y,width,height));
+	cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);  
+	cvResetImageROI( rimg );
 	
 	//cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),hsvimg);   
  
-        cvSmooth(thresh, thresh, CV_GAUSSIAN, 15, 15, 2, 2);
+        cvSmooth(thresh, thresh, CV_MEDIAN, 7, 7);
 	//cvCanny(thresh, kopia, 10, 20, 3);
- 	//cvErode(kopia,kopia,kernel,1);
-//	erode( kopia, kopia, element );
+ 	cvErode(thresh,thresh,kernel,1);
+	cvDilate(thresh,thresh,kernel,1);
+//cv::erode( thresh, thresh, element );
 
-cvSetImageROI(img,cvRect(x,y,width,height));
+cvSetImageROI(rimg,cvRect(x,y,width,height));
 //cvCopy( img, kopia );
-cvResetImageROI( img );
+cvResetImageROI( rimg );
 
 cvCopy(thresh, kopia2);
 /*	for(int rows = y; rows < height; rows++) {
@@ -127,6 +129,9 @@ cvCopy(thresh, kopia2);
 	//contour = 0;
         for (int i = 0; contour != 0; contour = contour->h_next, i++) {
  		cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
+
+// convex defects i hull ! 
+
             static CvMoments* moments = new CvMoments();
             cvMoments(contour, moments);
             static CvHuMoments* huMoments = new CvHuMoments();
@@ -172,7 +177,7 @@ cvCopy(thresh, kopia2);
  
         }
 	//displaying images
- 	cvShowImage("Original Image",img);
+ 	cvShowImage("Original Image",rimg);
 	cvShowImage("Color Image",kopia2);
 	cvShowImage("Thresholded Image",thresh);
         cvShowImage("afterEffects", kopia);
