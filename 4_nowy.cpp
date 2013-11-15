@@ -161,16 +161,13 @@ int main(int argc, const char* argv[]) {
 	// finding contour MAGIC! ^^
        	cvFindContours(kopia2, storage, &contour, sizeof(CvContour),
        		CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
- //      	CvMemStorage*	storage2 = cvCreateMemStorage(0);       	
-   //    	cvFindContours(kopia2, storage2, &contour2, sizeof(CvContour),
-  //     		CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-   //    	contour2 = contour;
+
        	static CvHuMoments* huMoments = new CvHuMoments();	
 	//contour = 0;
 
        	for( int i = 0; contour != 0; contour = contour->h_next, i++ ) // iterate through each contour. 
        	{
-       // tu nie działa ta funkcja cvcontour area
+     
        area=cvContourArea( contour,CV_WHOLE_SEQ, false);  //  Find the area of contour
        if(area>largest_area){
        	largest_area=area;
@@ -181,11 +178,11 @@ int main(int argc, const char* argv[]) {
 // trzeba to jakoś zainicjalizować?
 // zaalokować pamięc?? 
 // chcę zapamiętać tylko wskaźnik na strukturę tego konkretnego konturu
-
+// teraz &contour2 = - duża liczba
 ///////////////////////////////////////////////////////////////////////////////       	
-      // 	contour2 = contour;  
-      // contour2->h_next = 0; 
-     //   printf("cokolwiek %d %d \n", &contour2, &contour2->h_next);
+       	contour2 = contour;  
+       contour2->h_next = 0; 
+       printf("cokolwiek %d %d \n", &contour2, &contour2->h_next);
               //Store the index of largest contour
   //     bounding_rect=boundingRect(contour); // Find the bounding rectangle for biggest contour
    }
@@ -193,8 +190,8 @@ int main(int argc, const char* argv[]) {
 }
 
 Scalar color( 255,255,255);
-// cvDrawContours(kopia, contour2,colorB, colorB, CV_FILLED); // Draw the largest contour using previously stored index.
- //cvRectangle(src, bounding_rect,  Scalar(0,255,0),1, 8,0);  
+ cvDrawContours(kopia, contour2,colorB, colorB, CV_FILLED); // Draw the largest contour using previously stored index.
+ cvRectangle(src, bounding_rect,  Scalar(0,255,0),1, 8,0);  
  
 
 
@@ -203,12 +200,12 @@ Scalar color( 255,255,255);
 
  static CvMoments* moments = new CvMoments();
  //printf("cokolwiek %d %d \n", &contour2, &contour2->h_next);
- //cvMoments(contour2, moments);
+ cvMoments(contour2, moments);
 
- //cvGetHuMoments(moments, huMoments);
+ cvGetHuMoments(moments, huMoments);
  		//printf("hu1: %f\n", huMoments->hu1); 
  CvRect r = cvBoundingRect(contour, 1);
-       	//	cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
+       		cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
 
  if ((cvWaitKey(10) & 255) == 32) { 
  	huHand[0]= huMoments->hu1;
