@@ -1,4 +1,3 @@
-
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
@@ -22,24 +21,36 @@
 #define OBJB1 0.1665 // pierwszy
 #define OBJB2 0.0004 // drugi
 #define OBJB3 0.0001 // trzeci moment Hu dla kwadratu
+
+struct handMoments {
+  float hu1;
+  float hu2;
+  float hu3;
+};
+
 int x = 360;
 int y = 160;
 int width = 300;
 int height = 300;
 
+
+
+
 using namespace std;
 using namespace cv;
 
 int main(int argc, const char* argv[]) {
-
-//variables for fps counting
-time_t start, end;
-double sec,fps;
-
-float huHand[3];
+  
+  //variables for fps counting
+  time_t start, end;
+ double sec,fps;
+ 
+ float huHand[3];
+ handMoments gestures[3];
+ int fillGest = 0;
 
 // erosion element
-Mat element = getStructuringElement( MORPH_RECT,
+ Mat element = getStructuringElement( MORPH_RECT,
                                        Size( 5, 5 ),
                                        Point( 2, 2 ) );
 IplConvKernel*	kernel;
@@ -109,14 +120,14 @@ while (1) {
 	cvDilate(thresh,thresh,kernel,1);
 //cv::erode( thresh, thresh, element );
 
-cvSetImageROI(rimg,cvRect(x,y,width,height));
-//cvCopy( img, kopia );
-cvResetImageROI( rimg );
-
-cvCopy(thresh, kopia2);
-/*	for(int rows = y; rows < height; rows++) {
+	cvSetImageROI(rimg,cvRect(x,y,width,height));
+	//cvCopy( img, kopia );
+	cvResetImageROI( rimg );
+	
+	cvCopy(thresh, kopia2);
+	/*	for(int rows = y; rows < height; rows++) {
     		for(int cols = x; rows < width; cols++) {        
-        		kopia2->imageData[(rows-y)*kopia2->width + (cols-x)] = img->imageData[int(rows*img->width + cols)];
+		kopia2->imageData[(rows-y)*kopia2->width + (cols-x)] = img->imageData[int(rows*img->width + cols)];
     		}
 	}
 */        CvMemStorage* storage = cvCreateMemStorage(0);
@@ -136,17 +147,13 @@ cvCopy(thresh, kopia2);
 		
             static CvMoments* moments = new CvMoments();
             cvMoments(contour, moments);
-            if ((cvWaitKey(10) & 255) == 32) { 
- 		huHand[0]= huMoments->hu1;
-printf("huHand[0]: %f\n", huHand[0]);
-		huHand[1]= huMoments->hu2;
-printf("huHand[1]: %f\n", huHand[1]);
-		huHand[2]= huMoments->hu3;
-printf("huHand[2]: %f\n", huHand[2]);
-     
-		
-            
- 	}
+            if ((fillGest < 3) && (cvWaitKey(10) & 255) == 32) { 
+	      gestures[fillGest].hu1 =  huMoments->hu1;
+	      gestures[fillGest].hu2 =  huMoments->hu2;
+	      gestures[fillGest].hu3 =  huMoments->hu3;
+	      fillGest++;	
+	      
+	    }
             cvGetHuMoments(moments, huMoments);
  		//printf("hu1: %f\n", huMoments->hu1); 
             CvRect r = cvBoundingRect(contour, 1);
@@ -199,7 +206,7 @@ printf("huHand[2]: %f\n", huHand[2]);
 	++counter;
 	sec=difftime(end,start);
 	fps=counter/sec;
-//	printf("\n%lf",fps);
+	printf("\n%lf",fps);
       
 	// ESC key ends program
         if ((cvWaitKey(10) & 255) == 27) { 
