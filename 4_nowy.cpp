@@ -14,8 +14,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include<vector>
-#include<algorithm>
+#include <vector>
+#include <algorithm>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <time.h>
@@ -130,6 +130,7 @@ int main(int argc, const char* argv[]) {
        cvShowImage("result", result);
        getchar();
 */
+
        while (1) {
        	cvSet(kopia, cvScalar(0,0,0));
        	rimg = cvQueryFrame(capture);
@@ -156,78 +157,93 @@ int main(int argc, const char* argv[]) {
        	CvMemStorage* storage = cvCreateMemStorage(0);
        	CvSeq* contour = 0;
        	CvSeq* contour2 = 0;
+       	contour2 = 0;
 	// finding contour MAGIC! ^^
        	cvFindContours(kopia2, storage, &contour, sizeof(CvContour),
        		CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-
+ //      	CvMemStorage*	storage2 = cvCreateMemStorage(0);       	
+   //    	cvFindContours(kopia2, storage2, &contour2, sizeof(CvContour),
+  //     		CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+   //    	contour2 = contour;
        	static CvHuMoments* huMoments = new CvHuMoments();	
 	//contour = 0;
 
        	for( int i = 0; contour != 0; contour = contour->h_next, i++ ) // iterate through each contour. 
-      {
+       	{
        // tu nie działa ta funkcja cvcontour area
        area=cvContourArea( contour,CV_WHOLE_SEQ, false);  //  Find the area of contour
        if(area>largest_area){
-       largest_area=area;
-       largest_contour_index=i;
-       contour2 = contour;  
-       contour2->h_next = 0;              //Store the index of largest contour
-  //     bounding_rect=boundingRect(contour); // Find the bounding rectangle for biggest contour
-       }
-  
-      }
+       	largest_area=area;
+       	largest_contour_index=i;
+///////////////////////////////////////////////////////////////////////////
+// tu jest problem !
+// jak skopiować kontur? 
+// trzeba to jakoś zainicjalizować?
+// zaalokować pamięc?? 
+// chcę zapamiętać tylko wskaźnik na strukturę tego konkretnego konturu
 
- Scalar color( 255,255,255);
- cvDrawContours(kopia, contour2,colorB, colorB, CV_FILLED); // Draw the largest contour using previously stored index.
+///////////////////////////////////////////////////////////////////////////////       	
+      // 	contour2 = contour;  
+      // contour2->h_next = 0; 
+     //   printf("cokolwiek %d %d \n", &contour2, &contour2->h_next);
+              //Store the index of largest contour
+  //     bounding_rect=boundingRect(contour); // Find the bounding rectangle for biggest contour
+   }
+
+}
+
+Scalar color( 255,255,255);
+// cvDrawContours(kopia, contour2,colorB, colorB, CV_FILLED); // Draw the largest contour using previously stored index.
  //cvRectangle(src, bounding_rect,  Scalar(0,255,0),1, 8,0);  
  
 
-       	
+
 
 // convex defects i hull ! 
 
-       		static CvMoments* moments = new CvMoments();
-       		cvMoments(contour2, moments);
-       		if ((cvWaitKey(10) & 255) == 32) { 
-       			huHand[0]= huMoments->hu1;
-       			printf("huHand[0]: %f\n", huHand[0]);
-       			huHand[1]= huMoments->hu2;
-       			printf("huHand[1]: %f\n", huHand[1]);
-       			huHand[2]= huMoments->hu3;
-       			printf("huHand[2]: %f\n", huHand[2]);
+ static CvMoments* moments = new CvMoments();
+ //printf("cokolwiek %d %d \n", &contour2, &contour2->h_next);
+ //cvMoments(contour2, moments);
 
-
-
-       		}
-       		cvGetHuMoments(moments, huMoments);
+ //cvGetHuMoments(moments, huMoments);
  		//printf("hu1: %f\n", huMoments->hu1); 
-       		CvRect r = cvBoundingRect(contour, 1);
-       		cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
+ CvRect r = cvBoundingRect(contour, 1);
+       	//	cvDrawContours(kopia, contour, colorB, colorB, CV_FILLED);
+
+ if ((cvWaitKey(10) & 255) == 32) { 
+ 	huHand[0]= huMoments->hu1;
+ 	printf("huHand[0]: %f\n", huHand[0]);
+ 	huHand[1]= huMoments->hu2;
+ 	printf("huHand[1]: %f\n", huHand[1]);
+ 	huHand[2]= huMoments->hu3;
+ 	printf("huHand[2]: %f\n", huHand[2]);
 
 
-       		printf("hu1: %f\n", huMoments->hu1);
-       		printf("hu2: %f\n", huMoments->hu2);
-       		printf("hu3: %f\n\n", huMoments->hu3);
+
+ }
+ //printf("hu1: %f\n", huMoments->hu1);
+ //printf("hu2: %f\n", huMoments->hu2);
+ //printf("hu3: %f\n\n", huMoments->hu3);
 
 
-       		cvReleaseMemStorage(&storage);
+ cvReleaseMemStorage(&storage);
 
-       	
+
 	//displaying images
-       	cvShowImage("Original Image",rimg);
-       	cvShowImage("Color Image",kopia2);
-       	cvShowImage("Thresholded Image",thresh);
-       	cvShowImage("afterEffects", kopia);
+ cvShowImage("Original Image",rimg);
+ cvShowImage("Color Image",kopia2);
+ cvShowImage("Thresholded Image",thresh);
+ cvShowImage("afterEffects", kopia);
 
 	//Stop the clock and show FPS
-       	time(&end);
-       	++counter;
-       	sec=difftime(end,start);
-       	fps=counter/sec;
+ time(&end);
+ ++counter;
+ sec=difftime(end,start);
+ fps=counter/sec;
 	//printf("\n%lf",fps);
 
 	// ESC key ends program
-       	if ((cvWaitKey(10) & 255) == 27) { 
+ if ((cvWaitKey(10) & 255) == 27) { 
  		/*  cvReleaseImage(&kopia);
      
 		cvReleaseCapture(&capture);
