@@ -148,8 +148,8 @@ cvZero(buff2);
   cvSmooth(image, image, CV_MEDIAN, 5, 5);
   cvCvtColor(image,temp, CV_RGB2GRAY);
 
-  cvScale(image,temp1,0.5,128);  // must change 8 bit image to 32 bit image before do cvAdd
-
+  //cvScale(image,temp1,0.5,128);  // must change 8 bit image to 32 bit image before do cvAdd
+//
 
 
  //cvAdd(image,buffer,buffer); // add image and buffer then keep in buffer
@@ -168,13 +168,13 @@ cvSet(kopia, cvScalar(0,0,0));
 rimg = cvQueryFrame(capture);
 //	cvAbsDiff(rimg, img, rimg);
  
-  cvZero(result);
-  cvZero(temp2);
+  //cvZero(result);
+  //cvZero(temp2);
   img2 = cvQueryFrame(capture);
   cvSmooth(img2, img2, CV_MEDIAN, 5, 5);
   cvCvtColor(img2,temp2, CV_RGB2GRAY);
-  cvScale(img2, temp3, 0.5, 0);
-  cvSub(temp3, temp1, result);
+  //cvScale(img2, temp3, 0.5, 0);
+  cvSub(temp, temp2, result);
   //cvScale(temp, res2,1.0);
   cvShowImage("result", result);
 
