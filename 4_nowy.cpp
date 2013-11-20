@@ -29,22 +29,22 @@
 #define OBJB2 0.0004 // drugi
 #define OBJB3 0.0001 // trzeci moment Hu dla kwadratu
 
-/*struct openHand {
+struct openHand {
   float hu1;
   float hu2;
   float hu3;
-  cvSeq *hull;
-  cvPoint *defects;
+  CvSeq* hull;
+  CvPoint* defects;
   };
 
   struct indicFinger {
   float hu1;
   float hu2;
   float hu3;
-  cvSeq *hull;
-  cvPoint *defects;
+  CvSeq* hull;
+  CvPoint* defects;
   };
-*/
+
 
 int x = 360;
 int y = 160;
@@ -81,7 +81,6 @@ IplImage* img = cvQueryFrame(capture);
 // Setting ROI for smaller image
 cvSetImageROI(img,cvRect(x,y,width,height));
 IplImage *kopia2 = cvCreateImage(cvGetSize(img), 8, 1);
-IplImage* img2    = cvCreateImage(cvGetSize(img),8,3);
 
 // other images declarations				1 means greyscale 
 IplImage* rimg		= cvCreateImage(cvGetSize(img),8,3);
@@ -125,35 +124,42 @@ int MAXIMAGE = 10;
 IplImage * image = cvCreateImage(cvGetSize(img),8,3);
 // we should create 32 bits of image buffer
 IplImage * buffer = cvCreateImage(cvGetSize(image),32,3);
+IplImage* img2    = cvCreateImage(cvGetSize(img),8,3);
+
 cvZero(buffer);    // clear data in buffer
 // result image buffer
-IplImage * result = cvCreateImage(cvGetSize(image),8,3);
+IplImage * result = cvCreateImage(cvGetSize(image),8,1);
+IplImage * res2 = cvCreateImage(cvGetSize(image),16,1);
 cvZero(result);    // clear data in result 
-IplImage * temp = cvCreateImage(cvGetSize(image),32,3);  
-
+IplImage * temp = cvCreateImage(cvGetSize(image),8,1);  
+IplImage * temp2 = cvCreateImage(cvGetSize(image),8,1); 
+IplImage * temp1 = cvCreateImage(cvGetSize(image),8,1);  
+IplImage * temp3 = cvCreateImage(cvGetSize(image),8,1); 
+IplImage * buff2 = cvCreateImage(cvGetSize(image),8,3);
+cvZero(buff2); 
 // miało to robić taką magię, że brać 10klatek i je uśredniać.. i to chyba robi :P 
 // ale nie potrafię odjąć od siebie obrazu z kamerki z tym wzorcem który jest obliczany :(
 
 
-for(i=0;i< MAXIMAGE;i++){
+//for(i=0;i< MAXIMAGE;i++){
   cvZero(image);           // clear image
   image=cvQueryFrame(capture);   // custom function for get image from camera
 
   cvSmooth(image, image, CV_MEDIAN, 5, 5);
-  cvScale(image,temp,1.0);  // must change 8 bit image to 32 bit image before do cvAdd
+  cvCvtColor(image,temp, CV_RGB2GRAY);
 
-  cvAdd(image,buffer,buffer); // add image and buffer then keep in buffer
-}
+  cvScale(image,temp1,0.5,128);  // must change 8 bit image to 32 bit image before do cvAdd
+
+
+
+ //cvAdd(image,buffer,buffer); // add image and buffer then keep in buffer
+//}
 // then divide summarized image with image number
-cvScale(buffer,result,1.0/MAXIMAGE*1.0); // must include 1.0 for floating point operation
+  //cvScale(buffer,buff2,1.0/MAXIMAGE*1.0); // must include 1.0 for floating point operation
   //getchar();
   
 // now you can use noise reduce image in result buffer
- img2 = cvQueryFrame(capture);
-  cvSmooth(img2, img2, CV_MEDIAN, 5, 5);
-  cvSub(buffer, img2,result);
 
-  cvShowImage("result", result);
 
 
 
@@ -161,9 +167,17 @@ while (1) {
 cvSet(kopia, cvScalar(0,0,0));
 rimg = cvQueryFrame(capture);
 //	cvAbsDiff(rimg, img, rimg);
-
-
  
+  cvZero(result);
+  cvZero(temp2);
+  img2 = cvQueryFrame(capture);
+  cvSmooth(img2, img2, CV_MEDIAN, 5, 5);
+  cvCvtColor(img2,temp2, CV_RGB2GRAY);
+  cvScale(img2, temp3, 0.5, 0);
+  cvSub(temp3, temp1, result);
+  //cvScale(temp, res2,1.0);
+  cvShowImage("result", result);
+
 
 cvRectangle(rimg,cvPoint(x,y),cvPoint(x+width, y+height),(CV_RGB(255,0,0)),1);
 cvSetImageROI(rimg,cvRect(x,y,width,height));
