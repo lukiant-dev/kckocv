@@ -4,23 +4,6 @@
 #include <string>
 #include <list>
 #include <stdio.h>
-/*
-  #include <opencv/highgui.h>
-  #include <iostream>
-  #include <string>
-  #include <ctime>
-  #include <cmath>
-  #include <cstdlib>
-  #include <sys/time.h>
-  #include <arpa/inet.h>
-  #include <stdio.h>
-  #include <stdlib.h>
-  #include <string.h>
-  #include <unistd.h>
-  #include <opencv2/opencv.hpp>
-  #include <opencv2/imgproc/imgproc.hpp>
-  #include <vector>*/
-//#include <algorithm>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <time.h>
@@ -52,6 +35,8 @@ int y = 160;
 int width = 300;
 int height = 300;
 
+
+
 using namespace std;
 using namespace cv;
 
@@ -60,23 +45,21 @@ int main(int argc, const char* argv[]) {
 //variables for fps counting
   time_t start, end;
   double sec,fps;
-  
+  int x1 =0, y1 = 0;
   float huHand[3];
 
-  IplConvKernel*	kernel = cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL);
+  IplConvKernel*  kernel = cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL);
 
 //creating capture image
   CvCapture* capture = cvCaptureFromCAM(0);
   IplImage* img = cvQueryFrame(capture);
-
+  IplImage* rimg   = cvCreateImage(cvGetSize(img),8,3);
 // Setting ROI for smaller image
   cvSetImageROI(img,cvRect(x,y,width,height));
-  IplImage *kopia2 = cvCreateImage(cvGetSize(img), 8, 1);
-
-// other images declarations				1 means greyscale 
-  IplImage* rimg		= cvCreateImage(cvGetSize(img),8,3);
-  IplImage* thresh	= cvCreateImage(cvGetSize(img),8,1);
-  IplImage* kopia 	= cvCreateImage(cvGetSize(img),8,1);
+  IplImage* kopia2 = cvCreateImage(cvGetSize(img), 8, 1);
+  IplImage* thresh  = cvCreateImage(cvGetSize(img),8,1);
+  IplImage* kopia   = cvCreateImage(cvGetSize(img),8,3);
+  //IplImage* kopia2   = cvCreateImage(cvGetSize(img),8,1);
   cvResetImageROI( img );
 
 
@@ -106,22 +89,25 @@ int main(int argc, const char* argv[]) {
   int MAXIMAGE = 10;
   CvMemStorage *  defects_st = cvCreateMemStorage(0);
   double area, max_area = 0.0;
-  CvSeq *contours, *tmp, *contour = NULL;
+  CvSeq *contours = NULL;
+  CvSeq *tmp = NULL;
+ 
   CvMemStorage *  contour_st = cvCreateMemStorage(0);
-CvSeq *defects, *hull;
+  CvSeq *defects, *hull = NULL;
   CvConvexityDefect *defect_array;
   CvMemStorage *  hull_st = cvCreateMemStorage(0);
 
   CvPoint *xdefects;
   //calloc powoduje problemy :((((
-  xdefects = calloc(NUM_DEFECTS, sizeof(CvPoint));
+  xdefects = (CvPoint*)calloc(NUM_DEFECTS, sizeof(CvPoint));
   int num_defects;
   CvPoint hand_center;
   int hand_radius;
-int dist = 0;
+  int dist = 0;
 
   while (1) {
 
+    cvZero(kopia);
     rimg = cvQueryFrame(capture);
 
     cvRectangle(rimg,cvPoint(x,y),cvPoint(x+width, y+height),(CV_RGB(255,0,0)),1);
@@ -134,13 +120,14 @@ int dist = 0;
     cvErode(thresh,thresh,kernel,1);
     cvDilate(thresh,thresh,kernel,1);
 
-    cvCopy(thresh,kopia, NULL);
+    //cvCopy(thresh,kopia, NULL);
+    cvCopy(thresh, kopia2, NULL);
   /* cvFindContours modifies input image, so make a copy */
-    cvFindContours(kopia, contour_st, &contours,
+    cvFindContours(kopia2, contour_st, &contours,
      sizeof(CvContour), CV_RETR_EXTERNAL,
-     CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
-
-    for (tmp = contours; tmp; tmp = tmp->h_next) {
+     CV_CHAIN_APPROX_SIMPLE);//, cvPoint(0, 0));
+     CvSeq *contour = contours;
+    for (tmp = contours; tmp != 0; tmp = tmp->h_next) {
       area = fabs(cvContourArea(tmp, CV_WHOLE_SEQ, 0));
       if (area > max_area) {
         max_area = area;
@@ -149,41 +136,46 @@ int dist = 0;
     }
 
     if (contour) {
-      contour = cvApproxPoly(contour, sizeof(CvContour),
-       contour_st, CV_POLY_APPROX_DP, 2,
-       1);
+      printf("CONT!\n");
+      contour = cvApproxPoly(contour, sizeof(CvContour),contour_st, CV_POLY_APPROX_DP, 2);
     }
+  
+    if (contour)
+    {
+      printf("YES\n");
+      cvDrawContours(kopia,contour,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED); 
+      hull = cvConvexHull2(contour, 0, CV_CLOCKWISE, 0);
+    
 
-    hull = cvConvexHull2(contour, hull_st, CV_CLOCKWISE, 0);
-
-
-if (hull) {
-
+    if (hull){
     /* Get convexity defects of contour w.r.t. the convex hull */
-    defects = cvConvexityDefects(contour, hull,
-               defects_st);
+      printf("HULL!\n");
+       //cvDrawContours(kopia,hull,CV_RGB(255,255,0),CV_RGB(255,255,0),CV_FILLED); 
+      defects = cvConvexityDefects(contour, hull, defects_st);
+      if (defects && defects->total) {
+        defect_array = (CvConvexityDefect*)calloc(defects->total, sizeof(CvConvexityDefect));
+        cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
+      //cvDrawContours(kopia,defects,CV_RGB(255,255,0),CV_RGB(255,255,0),CV_FILLED); 
+      // Average depth points to get hand center 
+       for (i = 0; i < defects->total && i < NUM_DEFECTS; i++) {
+        x1 += defect_array[i].depth_point->x;
+        y1 += defect_array[i].depth_point->y;
 
-    if (defects && defects->total) {
-      defect_array = calloc(defects->total, sizeof(CvConvexityDefect));
-      cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
-
-      /* Average depth points to get hand center */
-      for (i = 0; i < defects->total && i < NUM_DEFECTS; i++) {
-        x += defect_array[i].depth_point->x;
-        y += defect_array[i].depth_point->y;
-
-        xdefects[i] = cvPoint(defect_array[i].depth_point->x,
+       xdefects[i] = cvPoint(defect_array[i].depth_point->x,
                 defect_array[i].depth_point->y);
       }
+     
 
-      x /= defects->total;
-      y /= defects->total;
+      x1 /= defects->total;
+      y1 /= defects->total;
 
       num_defects = defects->total;
-      hand_center = cvPoint(x, y);
-
+      hand_center = cvPoint(x1, y1);
+      cvCircle(kopia, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0);
+}
       /* Compute hand radius as mean of distances of
          defects' depth point to hand center */
+      /*
       for (i = 0; i < defects->total; i++) {
         int d = (x - defect_array[i].depth_point->x) *
           (x - defect_array[i].depth_point->x) +
@@ -195,9 +187,9 @@ if (hull) {
 
       hand_radius = dist / defects->total;
       free(defect_array);
-    }
-  }
-
+    }*/
+ }
+}
 
  //displaying images
     cvShowImage("Original Image",rimg);
