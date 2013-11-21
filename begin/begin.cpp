@@ -171,23 +171,32 @@ int main(int argc, const char* argv[]) {
 
       num_defects = defects->total;
       hand_center = cvPoint(x1, y1);
-      cvCircle(kopia, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0);
-}
+     
+      for(int j=0; j<num_defects;j++) {
+        printf(" defect depth for defect %d %f \n",j,defect_array[j].depth);
+        cvLine(kopia, *(defect_array[j].start), *(defect_array[j].depth_point),CV_RGB(255,255,0),1, CV_AA, 0 );
+        cvCircle( kopia, *(defect_array[j].depth_point), 5, CV_RGB(0,0,164), 2, 8,0);
+        cvCircle( kopia, *(defect_array[j].start), 5, CV_RGB(0,0,164), 2, 8,0);
+        cvLine(kopia, *(defect_array[j].depth_point), *(defect_array[j].end),CV_RGB(255,255,0),1, CV_AA, 0 );
+      }
       /* Compute hand radius as mean of distances of
          defects' depth point to hand center */
-      /*
+      
       for (i = 0; i < defects->total; i++) {
-        int d = (x - defect_array[i].depth_point->x) *
-          (x - defect_array[i].depth_point->x) +
-          (y - defect_array[i].depth_point->y) *
-          (y - defect_array[i].depth_point->y);
+        int d = (x1 - defect_array[i].depth_point->x) *
+          (x1 - defect_array[i].depth_point->x) +
+          (y1 - defect_array[i].depth_point->y) *
+          (y1 - defect_array[i].depth_point->y);
 
         dist += sqrt(d);
       }
 
       hand_radius = dist / defects->total;
+      cvCircle(kopia, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0);
+      cvCircle(kopia, hand_center, hand_radius, CV_RGB(255,0,0), 1, CV_AA, 0);
       free(defect_array);
-    }*/
+
+    }
  }
 }
 
