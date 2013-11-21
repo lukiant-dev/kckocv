@@ -59,7 +59,7 @@ int main(int argc, const char* argv[]) {
   IplImage* kopia2 = cvCreateImage(cvGetSize(img), 8, 1);
   IplImage* thresh  = cvCreateImage(cvGetSize(img),8,1);
   IplImage* kopia   = cvCreateImage(cvGetSize(img),8,3);
-  //IplImage* kopia2   = cvCreateImage(cvGetSize(img),8,1);
+  IplImage* res   = cvCreateImage(cvGetSize(img),8,1);
   cvResetImageROI( img );
 
 
@@ -67,6 +67,7 @@ int main(int argc, const char* argv[]) {
   cvNamedWindow("Original Image",CV_WINDOW_AUTOSIZE);
   cvNamedWindow("cnt",CV_WINDOW_AUTOSIZE);
   cvNamedWindow("afterEffects", CV_WINDOW_AUTOSIZE);
+  cvNamedWindow("result", CV_WINDOW_AUTOSIZE);
 
 //Variables for trackbar
   int h1=0;int s1=0;int v1=0;
@@ -104,6 +105,9 @@ int main(int argc, const char* argv[]) {
   CvPoint hand_center;
   int hand_radius;
   int dist = 0;
+
+  res = cvQueryFrame(capture);
+
 
   while (1) {
 
@@ -252,6 +256,7 @@ int main(int argc, const char* argv[]) {
  //cvShowImage("Color Image",kopia2);
     cvShowImage("Thresholded Image",thresh);
     cvShowImage("afterEffects", kopia);
+    cvShowImage("result", img);
 
  //Stop the clock and show FPS
     time(&end);
