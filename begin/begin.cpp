@@ -88,9 +88,9 @@ int main(int argc, const char* argv[]) {
   int i = 0;
   int MAXIMAGE = 10;
   CvMemStorage *  defects_st = cvCreateMemStorage(0);
-  double area, max_area = 0.0;
-  CvSeq *contours = NULL;
-  CvSeq *tmp = NULL;
+  //double area, max_area = 0.0;
+  //CvSeq *contours = NULL;
+  //CvSeq *tmp = NULL;
  
   CvMemStorage *  contour_st = cvCreateMemStorage(0);
   CvSeq *defects, *hull = NULL;
@@ -123,35 +123,67 @@ int main(int argc, const char* argv[]) {
     //cvCopy(thresh,kopia, NULL);
     cvCopy(thresh, kopia2, NULL);
   /* cvFindContours modifies input image, so make a copy */
-    cvFindContours(kopia2, contour_st, &contours,
+    /*cvFindContours(kopia2, contour_st, &contours,
      sizeof(CvContour), CV_RETR_EXTERNAL,
-     CV_CHAIN_APPROX_SIMPLE);//, cvPoint(0, 0));
-     CvSeq *contour = contours;
-    for (tmp = contours; tmp != 0; tmp = tmp->h_next) {
+     CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+     CvSeq *contour = contours;*/
+
+
+      CvMemStorage * storage = cvCreateMemStorage(0);
+      CvSeq * first = NULL;
+      CvSeq * contour = NULL;
+      cvFindContours(kopia2, storage, &first, sizeof(CvContour),CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+      CvSeq * maxC = first;
+      int maxArea = 0;
+      for(contour = first; contour != 0; contour = contour->h_next)
+        {
+          CvRect bound = cvBoundingRect(contour,0);
+          if(maxArea < bound.width * bound.height)
+            {
+              maxC = contour;
+              maxArea = bound.width * bound.height;
+            }
+        }
+      /*for(contour = first; contour != 0; contour = contour->h_next)
+        if(contour == max)
+         /* cvDrawContours(kopia,contour,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
+        else*/
+         /* {
+            CvScalar color(CV_RGB(255,0,0));
+            CvRect bound = cvBoundingRect(contour,0);
+            cvDrawContours(kopia,contour,color,color,CV_FILLED);
+            cvRectangle(kopia,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),color,1);
+          }*/
+
+   /* for (tmp = contours; tmp != 0; tmp = tmp->h_next) {
       area = fabs(cvContourArea(tmp, CV_WHOLE_SEQ, 0));
       if (area > max_area) {
         max_area = area;
         contour = tmp;
       }
-    }
-
-    if (contour) {
+    }*/
+   // cvDrawContours(kopia,contour,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED); 
+   /*if (contour) {
       printf("CONT!\n");
       contour = cvApproxPoly(contour, sizeof(CvContour),contour_st, CV_POLY_APPROX_DP, 2);
-    }
+    }*/
   
-    if (contour)
+    if (maxC)
     {
-      printf("YES\n");
-      cvDrawContours(kopia,contour,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED); 
-      hull = cvConvexHull2(contour, 0, CV_CLOCKWISE, 0);
+       CvRect bound = cvBoundingRect(maxC,0);
+ cvDrawContours(kopia,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
+  
+  cvRectangle(kopia,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
+
+     
+      hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 0);
     
 
     if (hull){
     /* Get convexity defects of contour w.r.t. the convex hull */
-      printf("HULL!\n");
+      //printf("HULL!\n");
        //cvDrawContours(kopia,hull,CV_RGB(255,255,0),CV_RGB(255,255,0),CV_FILLED); 
-      defects = cvConvexityDefects(contour, hull, defects_st);
+      defects = cvConvexityDefects(maxC, hull, defects_st);
       if (defects && defects->total) {
         defect_array = (CvConvexityDefect*)calloc(defects->total, sizeof(CvConvexityDefect));
         cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
@@ -197,7 +229,7 @@ int main(int argc, const char* argv[]) {
       /* Compute hand radius as mean of distances of
          defects' depth point to hand center */
       
-      for (i = 0; i < defects->total; i++) {
+     /* for (i = 0; i < defects->total; i++) {
         int d = (x1 - defect_array[i].depth_point->x) *
           (x1 - defect_array[i].depth_point->x) +
           (y1 - defect_array[i].depth_point->y) *
@@ -210,7 +242,7 @@ int main(int argc, const char* argv[]) {
       cvCircle(kopia, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0);
       cvCircle(kopia, hand_center, hand_radius, CV_RGB(255,0,0), 1, CV_AA, 0);
       free(defect_array);
-
+*/
     }
  }
 }
