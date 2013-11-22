@@ -123,7 +123,7 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1);
 
   IplImage* res   = cvCreateImage(cvGetSize(img),8,3);
   res = cvQueryFrame(capture);
-  
+  cvSmooth(res, res, CV_MEDIAN, 7, 7);
   cvCvtColor(res, tmp1, CV_RGB2GRAY);
   //cvErode(tmp1, tmp1, kernel,1);
  // cvShowImage("result", tmp1);
