@@ -97,6 +97,7 @@ int main(int argc, const char* argv[]) {
 //Variables for trackbar
   int h1=0;int s1=0;int v1=0;
   int h2=255;int s2=255;int v2=255;
+  int t1 = 20;
 //Creating the trackbars
   cvCreateTrackbar("H1","cnt",&h1,255,0);
   cvCreateTrackbar("H2","cnt",&h2,255,0);
@@ -104,6 +105,7 @@ int main(int argc, const char* argv[]) {
   cvCreateTrackbar("S2","cnt",&s2,255,0);
   cvCreateTrackbar("V1","cnt",&v1,255,0);
   cvCreateTrackbar("V2","cnt",&v2,255,0);
+  cvCreateTrackbar("Diff","cnt",&t1,255,0);
 
 //whats that???? contour finding?
   CvScalar colorB = CV_RGB( 0, 255, 0 );
@@ -123,7 +125,7 @@ int main(int argc, const char* argv[]) {
   CvSeq *defects, *hull2,  *hull = NULL;
   CvConvexityDefect *defect_array;
   CvMemStorage *  hull_st = cvCreateMemStorage(0);
- // CvMemStorage *  hull_st2 = cvCreateMemStorage(0);
+  CvMemStorage *  hull_st2 = cvCreateMemStorage(0);
 
   CvPoint *xdefects;
   //calloc powoduje problemy :((((
@@ -139,7 +141,8 @@ int main(int argc, const char* argv[]) {
   imgFF = cvQueryFrame(capture);
   cvSmooth(imgFF, tmp3, CV_MEDIAN, 7, 7);
   cvCvtColor(tmp3, imgGrayFF, CV_RGB2GRAY);
-  //cvErode(tmp1, tmp1, kernel,1);
+  cvErode(imgGrayFF, tmp1, kernel,5);
+  cvCopy(tmp1, imgGrayFF);
  // cvShowImage("result", tmp1);
 
   //cvShowImage("result", back);
@@ -158,19 +161,21 @@ int main(int argc, const char* argv[]) {
     cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
     cvCopy(rimg, imgCurr);
     //imgCurr = cvQueryFrame(capture);
-    //cvSmooth(imgCurr, tmp3, CV_MEDIAN, 7, 7);
+    cvSmooth(imgCurr, tmp3, CV_MEDIAN, 7, 7);
     //imgCurr = cvQueryFrame(capture);
 
 
-    cvCvtColor(imgCurr, imgGrayCurr, CV_RGB2GRAY);
+    cvCvtColor(tmp3, imgGrayCurr, CV_RGB2GRAY);
+    cvErode(imgGrayCurr, tmp1, kernel, 3);
+    cvCopy(tmp1, imgGrayCurr);
     //cvAdd(tmp1, tmp1, tmp1);
       //cvErode(tmp2, tmp2, kernel,1);
     cvAbsDiff(imgGrayCurr,imgGrayFF,imgDiff);
     //cvAnd(tmp1, tmp2, result);
 //   cvNot(result,tmp3);
-    cvThreshold(imgDiff, tmp1, 15, 255, THRESH_BINARY);
+    cvThreshold(imgDiff, tmp1, t1, 255, THRESH_BINARY);
     cvErode(tmp1, imgDiff, kernel,  1);
-    //cvDilate(result1, result1,kernel,  3);
+    cvDilate(imgDiff, imgDiff,kernel,  1);
 
 
    //cvAnd(tmp1, tmp2 ,result);
@@ -184,6 +189,7 @@ int main(int argc, const char* argv[]) {
     cvErode(thresh,thresh,kernel,1);
     cvDilate(thresh,thresh,kernel,1);
     cvAnd(thresh, imgDiff, imgTbs);
+    cvErode(imgTbs,imgTbs,kernel,1);
     cvDilate(imgTbs,imgTbs,kernel,1);
     cvCopy(imgTbs, tmp1);
     //cvCopy(thresh,kopia2, NULL);
@@ -211,86 +217,136 @@ for(contour = first; contour != 0; contour = contour->h_next)
     maxArea = bound.width * bound.height;
   }
 }
+      /*for(contour = first; contour != 0; contour = contour->h_next)
+        if(contour == max)
+         /* cvDrawContours(kopia,contour,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
+        else*/
+         /* {
+            CvScalar color(CV_RGB(255,0,0));
+            CvRect bound = cvBoundingRect(contour,0);
+            cvDrawContours(kopia,contour,color,color,CV_FILLED);
+            cvRectangle(kopia,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),color,1);
+          }*/
 
-      if (maxC)
-      {
-       CvRect bound = cvBoundingRect(maxC,0);
-       cvDrawContours(imgCont,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
+   /* for (tmp = contours; tmp != 0; tmp = tmp->h_next) {
+      area = fabs(cvContourArea(tmp, CV_WHOLE_SEQ, 0));
+      if (area > max_area) {
+        max_area = area;
+        contour = tmp;
+      }
+    }*/
+   // cvDrawContours(kopia,contour,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED); 
+   /*if (contour) {
+      printf("CONT!\n");
+      contour = cvApproxPoly(contour, sizeof(CvContour),contour_st, CV_POLY_APPROX_DP, 2);
+    }*/
+     if (maxC) {
+    maxC = cvApproxPoly(maxC, sizeof(CvContour),contour_st, CV_POLY_APPROX_DP, 2,1);
+   
+ }
 
-       cvRectangle(imgCont,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
+ // printf("HAHA\n");
+    if (maxC)
+    {
+     CvRect bound = cvBoundingRect(maxC,0);
+     cvDrawContours(imgCont,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
+
+     cvRectangle(imgCont,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
 
 
-       hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 0);
-      // hull2 = cvConvexHull2(maxC, hull_st2, CV_CLOCKWISE, 0);
+     hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 1);
+     hull2 = cvConvexHull2(maxC, hull_st2, CV_CLOCKWISE, 0);
        //double hullArea = fabs(cvContourArea(hull, CV_WHOLE_SEQ, 0));
        //printf("%f || %d\n", hullArea, maxArea);
-       
-       if ( hull){
 
-        cvDrawContours(imgCont,hull,CV_RGB(0,255,0),CV_RGB(0,255,0),CV_FILLED);
+     if ( hull){
 
-  
+      cvDrawContours(imgCont,hull,CV_RGB(0,255,0),CV_RGB(0,255,0),CV_FILLED);
+
+
       //printf("HULL!\n");
        //cvDrawContours(kopia,hull,CV_RGB(255,255,0),CV_RGB(255,255,0),CV_FILLED); 
-        defects = cvConvexityDefects(maxC, hull, defects_st);
-        if (defects && defects->total) {
-          defect_array = (CvConvexityDefect*)calloc(defects->total, sizeof(CvConvexityDefect));
+      defects = cvConvexityDefects(maxC, hull2, defects_st);
+      if (defects && defects->total) {
+        defect_array = (CvConvexityDefect*)calloc(defects->total, sizeof(CvConvexityDefect));
 
-          cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
+        cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
 
+         // xdefects = (CvPoint*)calloc(num_defects, sizeof(CvPoint));
+      //cvDrawContours(kopia,defects,CV_RGB(255,255,0),CV_RGB(255,255,0),CV_FILLED); 
+      // Average depth points to get hand center 
+        /*  for (i = 0; i < defects->total; i++) {
+            x1 += defect_array[i].depth_point->x;
+            y1 += defect_array[i].depth_point->y;
 
+            xdefects[i] = cvPoint(defect_array[i].depth_point->x,
+              defect_array[i].depth_point->y);
+          }*/
+
+/*
+          x1 /= defects->total;
+          y1 /= defects->total;
+*/
           num_defects = defects->total;
           hand_center =  cvPoint((bound.x+bound.x+bound.width)/2,(bound.y+bound.y+bound.height)/2);
 
+          //printf("DIFF:%d\n", hull->total-defects->total);
+          //int num_starts = 0;
 
-          for(int j=0; j<num_defects;j++) {
+          for(int j=0; j<minimum(NUM_DEFECTS, num_defects);j++) {
         //printf(" defect depth for defect %d %f \n",j,defect_array[j].depth);
-            cvLine(imgCont, *(defect_array[j].start), *(defect_array[j].depth_point),CV_RGB(255,255,0),1, CV_AA, 0 );
-            cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,164), 2, 8,0);
-            cvCircle( imgCont, *(defect_array[j].start), 5, CV_RGB(0,0,164), 2, 8,0);
-            cvLine(imgCont, *(defect_array[j].depth_point), *(defect_array[j].end),CV_RGB(255,255,0),1, CV_AA, 0 );
-            cvLine(imgCont,hand_center, *(defect_array[j].end),CV_RGB(128,0,128),1, CV_AA, 0 );
+            //cvLine(imgCont, *(defect_array[j].start), *(defect_array[j].depth_point),CV_RGB(255,255,0),1, CV_AA, 0 );
+            if(defect_array[j].depth > bound.height/5) 
+              cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
+            //cvCircle( imgCont, *(defect_array[j].start), 5, CV_RGB(0,255,255), 2, 8,0);
+            //cvLine(imgCont, *(defect_array[j].depth_point), *(defect_array[j].end),CV_RGB(255,255,0),1, CV_AA, 0 );
+            //cvLine(imgCont,hand_center, *(defect_array[j].end),CV_RGB(128,0,128),1, CV_AA, 0 );
+            printf("DEPTH:%f\n", (defect_array[j].depth));
           }
 
-        
 
-      
 
-            for (i = 0; i < defects->total; i++) {
-              int d = (x1 - defect_array[i].depth_point->x) *
-              (x1 - defect_array[i].depth_point->x) +
-              (y1 - defect_array[i].depth_point->y) *
-              (y1 - defect_array[i].depth_point->y);
 
-              dist += sqrt(d);
-            }
 
-            hand_radius = dist / defects->total;
-            cvCircle(imgCont, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0);
-            cvCircle(imgCont, hand_center, hand_radius, CV_RGB(255,0,0), 1, CV_AA, 0);
-            free(defect_array);
+          for (i = 0; i < defects->total; i++) {
+            int d = (x1 - defect_array[i].depth_point->x) *
+            (x1 - defect_array[i].depth_point->x) +
+            (y1 - defect_array[i].depth_point->y) *
+            (y1 - defect_array[i].depth_point->y);
 
+            dist += sqrt(d);
           }
+
+          hand_radius = dist / defects->total;
+          cvCircle(imgCont, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0);
+            //cvCircle(imgCont, hand_center, hand_radius, CV_RGB(255,0,0), 1, CV_AA, 0);
+          free(defect_array);
+
         }
       }
+    }
 
  //displaying images
-      cvShowImage("Original Image",rimg);
-      cvShowImage("Diff", imgDiff);
-      cvShowImage("Thresholded Image",thresh);
-      cvShowImage("Contours", imgCont);
-      cvShowImage("TBS", imgTbs);
+    cvShowImage("Original Image",rimg);
+    cvShowImage("Diff", imgDiff);
+    cvShowImage("Thresholded Image",thresh);
+    cvShowImage("Contours", imgCont);
+    cvShowImage("TBS", imgTbs);
 
  //Stop the clock and show FPS
-      time(&end);
-      ++counter;
-      sec=difftime(end,start);
-      fps=counter/sec;
+    time(&end);
+    ++counter;
+    sec=difftime(end,start);
+    fps=counter/sec;
 
 
  // ESC key ends program
-      c = cvWaitKey(5) & 255 ;
-
+    c = cvWaitKey(5) & 255 ;
+    
+/*if ((cvWaitKey(5) & 255) == 32) {
+  printf("SPACJA\n");
+  break;
+}*/
 
   if (c == 27)
   {
@@ -322,6 +378,20 @@ for(contour = first; contour != 0; contour = contour->h_next)
 
   }
 
+//cvReleaseMemStorage(&storage);
+  //while end
+
+ /*if ((cvWaitKey(10) & 255) == 27) { 
+     //cvReleaseImage(&kopia);
+     
+       cvReleaseCapture(&capture);
+       cvReleaseImage(&img);
+       cvReleaseImage(&thresh);
+       cvReleaseImage(&rimg);
+       cvReleaseImage(&hsvimg);
+       break;
+ 
+     }*/
      } //while end
 
      cvDestroyWindow("mywindow");
