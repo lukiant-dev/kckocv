@@ -9,6 +9,7 @@
 #include <time.h>
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/highgui/highgui_c.h>
+#include <opencv2/opencv.hpp>
 
 #define NUM_DEFECTS 8
 
@@ -58,8 +59,11 @@ int main(int argc, const char* argv[]) {
   cvSetImageROI(img,cvRect(x,y,width,height));
   IplImage* kopia2 = cvCreateImage(cvGetSize(img), 8, 1);
   IplImage* thresh  = cvCreateImage(cvGetSize(img),8,1);
-  IplImage* kopia   = cvCreateImage(cvGetSize(img),8,3);
-  IplImage* res   = cvCreateImage(cvGetSize(img),8,1);
+  IplImage* kopia = cvCreateImage(cvGetSize(img), 8, 1);
+
+IplImage* tmp1   = cvCreateImage(cvGetSize(img),8,1);
+IplImage* tmp2   = cvCreateImage(cvGetSize(img),8,1);
+IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,3);  
   cvResetImageROI( img );
 
 
@@ -68,6 +72,8 @@ int main(int argc, const char* argv[]) {
   cvNamedWindow("cnt",CV_WINDOW_AUTOSIZE);
   cvNamedWindow("afterEffects", CV_WINDOW_AUTOSIZE);
   cvNamedWindow("result", CV_WINDOW_AUTOSIZE);
+  cvNamedWindow("xxx", CV_WINDOW_AUTOSIZE);
+
 
 //Variables for trackbar
   int h1=0;int s1=0;int v1=0;
@@ -92,7 +98,8 @@ int main(int argc, const char* argv[]) {
   //double area, max_area = 0.0;
   //CvSeq *contours = NULL;
   //CvSeq *tmp = NULL;
- 
+
+
   CvMemStorage *  contour_st = cvCreateMemStorage(0);
   CvSeq *defects, *hull = NULL;
   CvConvexityDefect *defect_array;
@@ -106,8 +113,17 @@ int main(int argc, const char* argv[]) {
   int hand_radius;
   int dist = 0;
 
-  res = cvQueryFrame(capture);
 
+  
+  cvSetImageROI(img,cvRect(x,y,width,height));
+
+  IplImage* res   = cvCreateImage(cvGetSize(img),8,3);
+  res = cvQueryFrame(capture);
+  
+  cvCvtColor(res, tmp1, CV_RGB2GRAY);
+  cvShowImage("result", tmp1);
+  
+  cvResetImageROI(img);
 
   while (1) {
 
@@ -117,6 +133,15 @@ int main(int argc, const char* argv[]) {
     cvRectangle(rimg,cvPoint(x,y),cvPoint(x+width, y+height),(CV_RGB(255,0,0)),1);
     cvSetImageROI(rimg,cvRect(x,y,width,height));
     cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);  
+    IplImage* xxx   = cvCreateImage(cvGetSize(rimg),8,3);
+    xxx = cvQueryFrame(capture);
+    IplImage* result   = cvCreateImage(cvGetSize(rimg),8,1);
+    cvCvtColor(xxx, tmp2, CV_RGB2GRAY);
+   // cvAdd(tmp1, tmp1, tmp1);
+    cvSub(tmp2,tmp1,result);
+    cvShowImage("xxx", result);
+   
+    
     cvResetImageROI( rimg ); 
 
     cvSmooth(thresh, thresh, CV_MEDIAN, 7, 7);
@@ -256,7 +281,7 @@ int main(int argc, const char* argv[]) {
  //cvShowImage("Color Image",kopia2);
     cvShowImage("Thresholded Image",thresh);
     cvShowImage("afterEffects", kopia);
-    cvShowImage("result", img);
+   
 
  //Stop the clock and show FPS
     time(&end);
