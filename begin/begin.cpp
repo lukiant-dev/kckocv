@@ -57,26 +57,41 @@ int main(int argc, const char* argv[]) {
   IplImage* rimg   = cvCreateImage(cvGetSize(img),8,3);
 // Setting ROI for smaller image
   cvSetImageROI(img,cvRect(x,y,width,height));
-  IplImage* kopia2 = cvCreateImage(cvGetSize(img), 8, 1);
+  IplImage* imgTbs = cvCreateImage(cvGetSize(img), 8, 1);
   IplImage* thresh  = cvCreateImage(cvGetSize(img),8,1);
-  IplImage* kopia = cvCreateImage(cvGetSize(img), 8, 3);
+  IplImage* imgCont = cvCreateImage(cvGetSize(img), 8, 3);
 
-IplImage* tmp1   = cvCreateImage(cvGetSize(img),8,1);
-IplImage* tmp2   = cvCreateImage(cvGetSize(img),8,1);
-IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1); 
+  IplImage* imgFF   = cvCreateImage(cvGetSize(img),8,3);
+  IplImage* imgCurr   = cvCreateImage(cvGetSize(img),8,3);
+  IplImage* imgGrayFF  = cvCreateImage(cvGetSize(img),8,1);
+  IplImage* imgGrayCurr   = cvCreateImage(cvGetSize(img),8,1);
+  IplImage* imgDiff   = cvCreateImage(cvGetSize(img),8,1);
 
- IplImage* result   = cvCreateImage(cvGetSize(img),8,1);
-    IplImage* result1   = cvCreateImage(cvGetSize(img),8,1); 
-      IplImage* xxx   = cvCreateImage(cvGetSize(img),8,3);
+  IplImage* tmp1  = cvCreateImage(cvGetSize(img),8,1); 
+  IplImage* tmp3  = cvCreateImage(cvGetSize(img),8,3); 
+
+
   cvResetImageROI( img );
 
 
 //Windows for displaying images and trackbars
   cvNamedWindow("Original Image",CV_WINDOW_AUTOSIZE);
   cvNamedWindow("cnt",CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("afterEffects", CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("result", CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("xxx", CV_WINDOW_AUTOSIZE);
+  cvNamedWindow("Contours", CV_WINDOW_AUTOSIZE);
+  cvNamedWindow("Thresholded Image", CV_WINDOW_AUTOSIZE);
+  cvNamedWindow("TBS", CV_WINDOW_AUTOSIZE);
+  cvNamedWindow("Diff", CV_WINDOW_AUTOSIZE);
+
+
+  cvMoveWindow("cnt", 1000, 0);
+  cvMoveWindow("Contours", 700, 0);
+  cvMoveWindow("TBS", 0,500);
+  cvMoveWindow("Thresholded Image", 700, 500);
+  cvMoveWindow("Diff", 1000, 500);
+
+
+  //cvNamedWindow("result", CV_WINDOW_AUTOSIZE);
+
 
 
 //Variables for trackbar
@@ -99,9 +114,6 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1);
   int i = 0;
   int MAXIMAGE = 10;
   CvMemStorage *  defects_st = cvCreateMemStorage(0);
-  //double area, max_area = 0.0;
-  //CvSeq *contours = NULL;
-  //CvSeq *tmp = NULL;
 
 
   CvMemStorage *  contour_st = cvCreateMemStorage(0);
@@ -120,134 +132,94 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1);
 
   
   cvSetImageROI(img,cvRect(x,y,width,height));
+  imgFF = cvQueryFrame(capture);
+  cvSmooth(imgFF, tmp3, CV_MEDIAN, 7, 7);
+  cvCvtColor(tmp3, imgGrayFF, CV_RGB2GRAY);
 
-  IplImage* res   = cvCreateImage(cvGetSize(img),8,3);
-  res = cvQueryFrame(capture);
-  cvSmooth(res, res, CV_MEDIAN, 7, 7);
-  cvCvtColor(res, tmp1, CV_RGB2GRAY);
-  //cvErode(tmp1, tmp1, kernel,1);
- // cvShowImage("result", tmp1);
 
-  //cvShowImage("result", back);
- 
   cvResetImageROI(img);
 
   while (1) {
 
-    cvZero(kopia);
+    cvZero(imgCont);
     rimg = cvQueryFrame(capture);
 
     cvRectangle(rimg,cvPoint(x,y),cvPoint(x+width, y+height),(CV_RGB(255,0,0)),1);
     cvSetImageROI(rimg,cvRect(x,y,width,height));
     cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
-    
-    xxx = cvQueryFrame(capture);
- 
-       
-    cvCvtColor(xxx, tmp2, CV_RGB2GRAY);
-    //cvAdd(tmp1, tmp1, tmp1);
-      //cvErode(tmp2, tmp2, kernel,1);
-    cvAbsDiff(tmp2,tmp1,result);
-    cvThreshold(result, result1, 15, 255, THRESH_BINARY);
-        cvErode(result1, result1,kernel,  1);
-    //cvDilate(result1, result1,kernel,  3);
+    cvCopy(rimg, imgCurr);
 
 
-   //cvAnd(tmp1, tmp2 ,result);
-    cvShowImage("xxx", result1);
- 
-    cvResetImageROI( rimg );
+    cvCvtColor(imgCurr, imgGrayCurr, CV_RGB2GRAY);
   
+    cvAbsDiff(imgGrayCurr,imgGrayFF,imgDiff);
+  
+    cvThreshold(imgDiff, tmp1, 15, 255, THRESH_BINARY);
+    cvErode(tmp1, imgDiff, kernel,  1);
+
+
+    cvResetImageROI( rimg );
+
 
     cvSmooth(thresh, thresh, CV_MEDIAN, 7, 7);
 
     cvErode(thresh,thresh,kernel,1);
     cvDilate(thresh,thresh,kernel,1);
-
-    //cvCopy(thresh,kopia, NULL);
-    cvCopy(thresh, kopia2, NULL);
-  /* cvFindContours modifies input image, so make a copy */
-    /*cvFindContours(kopia2, contour_st, &contours,
-     sizeof(CvContour), CV_RETR_EXTERNAL,
-     CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
-     CvSeq *contour = contours;*/
+    cvAnd(thresh, imgDiff, imgTbs);
+    cvCopy(imgTbs, tmp1);
 
 
-      CvMemStorage * storage = cvCreateMemStorage(0);
-      CvSeq * first = NULL;
-      CvSeq * contour = NULL;
-      cvFindContours(result1, storage, &first, sizeof(CvContour),CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-      CvSeq * maxC = first;
-      int maxArea = 0;
-      for(contour = first; contour != 0; contour = contour->h_next)
-        {
-          CvRect bound = cvBoundingRect(contour,0);
-          if(maxArea < bound.width * bound.height)
-            {
-              maxC = contour;
-              maxArea = bound.width * bound.height;
-            }
-        }
-      /*for(contour = first; contour != 0; contour = contour->h_next)
-        if(contour == max)
-         /* cvDrawContours(kopia,contour,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
-        else*/
-         /* {
-            CvScalar color(CV_RGB(255,0,0));
-            CvRect bound = cvBoundingRect(contour,0);
-            cvDrawContours(kopia,contour,color,color,CV_FILLED);
-            cvRectangle(kopia,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),color,1);
-          }*/
-
-   /* for (tmp = contours; tmp != 0; tmp = tmp->h_next) {
-      area = fabs(cvContourArea(tmp, CV_WHOLE_SEQ, 0));
-      if (area > max_area) {
-        max_area = area;
-        contour = tmp;
-      }
-    }*/
-   // cvDrawContours(kopia,contour,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED); 
-   /*if (contour) {
-      printf("CONT!\n");
-      contour = cvApproxPoly(contour, sizeof(CvContour),contour_st, CV_POLY_APPROX_DP, 2);
-    }*/
-  
-    if (maxC)
-    {
+CvMemStorage * storage = cvCreateMemStorage(0);
+CvSeq * first = NULL;
+CvSeq * contour = NULL;
+cvFindContours(tmp1, storage, &first, sizeof(CvContour),CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+CvSeq * maxC = first;
+int maxArea = 0;
+for(contour = first; contour != 0; contour = contour->h_next)
+{
+  CvRect bound = cvBoundingRect(contour,0);
+  if(maxArea < bound.width * bound.height)
+  {
+    maxC = contour;
+    maxArea = bound.width * bound.height;
+  }
+}
+      if (maxC)
+      {
        CvRect bound = cvBoundingRect(maxC,0);
- cvDrawContours(kopia,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
-  
-  cvRectangle(kopia,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
+       cvDrawContours(imgCont,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
 
-     
-      hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 0);
-    
+       cvRectangle(imgCont,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
 
-    if (hull){
+
+       hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 0);
+
+
+       if (hull){
     /* Get convexity defects of contour w.r.t. the convex hull */
       //printf("HULL!\n");
        //cvDrawContours(kopia,hull,CV_RGB(255,255,0),CV_RGB(255,255,0),CV_FILLED); 
-      defects = cvConvexityDefects(maxC, hull, defects_st);
-      if (defects && defects->total) {
-        defect_array = (CvConvexityDefect*)calloc(defects->total, sizeof(CvConvexityDefect));
-        cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
+        defects = cvConvexityDefects(maxC, hull, defects_st);
+        if (defects && defects->total) {
+          defect_array = (CvConvexityDefect*)calloc(defects->total, sizeof(CvConvexityDefect));
+          cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
       //cvDrawContours(kopia,defects,CV_RGB(255,255,0),CV_RGB(255,255,0),CV_FILLED); 
       // Average depth points to get hand center 
-       for (i = 0; i < defects->total && i < NUM_DEFECTS; i++) {
-        x1 += defect_array[i].depth_point->x;
-        y1 += defect_array[i].depth_point->y;
+          for (i = 0; i < defects->total && i < NUM_DEFECTS; i++) {
+            x1 += defect_array[i].depth_point->x;
+            y1 += defect_array[i].depth_point->y;
 
-       xdefects[i] = cvPoint(defect_array[i].depth_point->x,
-                defect_array[i].depth_point->y);
-      }
-     
+            xdefects[i] = cvPoint(defect_array[i].depth_point->x,
+              defect_array[i].depth_point->y);
+          }
 
-      x1 /= defects->total;
-      y1 /= defects->total;
 
-      num_defects = defects->total;
-      hand_center = cvPoint(x1, y1);
-     
+          x1 /= defects->total;
+          y1 /= defects->total;
+
+          num_defects = defects->total;
+          hand_center = cvPoint(x1, y1);
+
       /*for(int j=0; j<num_defects;j++) {
         printf(" defect depth for defect %d %f \n",j,defect_array[j].depth);
         cvLine(kopia, *(defect_array[j].start), *(defect_array[j].depth_point),CV_RGB(255,255,0),1, CV_AA, 0 );
@@ -260,19 +232,19 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1);
 
 
 
-       CvPoint pt0 = **CV_GET_SEQ_ELEM( CvPoint*, hull, hullcount - 1 );
+        CvPoint pt0 = **CV_GET_SEQ_ELEM( CvPoint*, hull, hullcount - 1 );
 
         for(int k = 0; k < hullcount; k++ )
         {
 
-            CvPoint pt = **CV_GET_SEQ_ELEM( CvPoint*, hull, k );
-            cvLine( kopia, pt0, pt, CV_RGB( 0, 255, 0 ), 1, CV_AA, 0 );
-            pt0 = pt;
+          CvPoint pt = **CV_GET_SEQ_ELEM( CvPoint*, hull, k );
+          cvLine( imgCont, pt0, pt, CV_RGB( 0, 255, 0 ), 1, CV_AA, 0 );
+          pt0 = pt;
         }
 
       /* Compute hand radius as mean of distances of
          defects' depth point to hand center */
-      
+
      /* for (i = 0; i < defects->total; i++) {
         int d = (x1 - defect_array[i].depth_point->x) *
           (x1 - defect_array[i].depth_point->x) +
@@ -288,25 +260,25 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1);
       free(defect_array);
 */
     }
- }
+  }
 }
 
  //displaying images
-    cvShowImage("Original Image",rimg);
- //cvShowImage("Color Image",kopia2);
-    cvShowImage("Thresholded Image",thresh);
-    cvShowImage("afterEffects", kopia);
-   
+cvShowImage("Original Image",rimg);
+cvShowImage("Diff", imgDiff);
+cvShowImage("Thresholded Image",thresh);
+cvShowImage("Contours", imgCont);
+cvShowImage("TBS", imgTbs);
 
  //Stop the clock and show FPS
-    time(&end);
-    ++counter;
-    sec=difftime(end,start);
-    fps=counter/sec;
+time(&end);
+++counter;
+sec=difftime(end,start);
+fps=counter/sec;
  //printf("\n%lf",fps);
 
  // ESC key ends program
-    if ((cvWaitKey(10) & 255) == 27) { 
+if ((cvWaitKey(10) & 255) == 27) { 
    /*  cvReleaseImage(&kopia);
      
        cvReleaseCapture(&capture);
