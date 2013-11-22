@@ -122,9 +122,9 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1);
   cvSetImageROI(img,cvRect(x,y,width,height));
 
   IplImage* res   = cvCreateImage(cvGetSize(img),8,3);
-  //res = cvQueryFrame(capture);
+  res = cvQueryFrame(capture);
   
-  //cvCvtColor(res, tmp1, CV_RGB2GRAY);
+  cvCvtColor(res, tmp1, CV_RGB2GRAY);
   //cvErode(tmp1, tmp1, kernel,1);
  // cvShowImage("result", tmp1);
 
@@ -142,23 +142,15 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1);
     cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
     
     xxx = cvQueryFrame(capture);
-
-    if(counter%MAXIMAGE==0)
-    {
-       cvCvtColor(xxx, tmp3, CV_RGB2GRAY);
-       cvCopy(tmp3,tmp1);
-    }
-     
-  
-    
+ 
        
     cvCvtColor(xxx, tmp2, CV_RGB2GRAY);
     //cvAdd(tmp1, tmp1, tmp1);
       //cvErode(tmp2, tmp2, kernel,1);
     cvAbsDiff(tmp2,tmp1,result);
     cvThreshold(result, result1, 15, 255, THRESH_BINARY);
-        cvErode(result1, result1,kernel,  3);
-    cvDilate(result1, result1,kernel,  3);
+        cvErode(result1, result1,kernel,  1);
+    //cvDilate(result1, result1,kernel,  3);
 
 
    //cvAnd(tmp1, tmp2 ,result);
@@ -184,7 +176,7 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1);
       CvMemStorage * storage = cvCreateMemStorage(0);
       CvSeq * first = NULL;
       CvSeq * contour = NULL;
-      cvFindContours(kopia2, storage, &first, sizeof(CvContour),CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+      cvFindContours(result1, storage, &first, sizeof(CvContour),CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
       CvSeq * maxC = first;
       int maxArea = 0;
       for(contour = first; contour != 0; contour = contour->h_next)
