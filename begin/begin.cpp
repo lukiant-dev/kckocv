@@ -59,11 +59,15 @@ int main(int argc, const char* argv[]) {
   cvSetImageROI(img,cvRect(x,y,width,height));
   IplImage* kopia2 = cvCreateImage(cvGetSize(img), 8, 1);
   IplImage* thresh  = cvCreateImage(cvGetSize(img),8,1);
-  IplImage* kopia = cvCreateImage(cvGetSize(img), 8, 1);
+  IplImage* kopia = cvCreateImage(cvGetSize(img), 8, 3);
 
 IplImage* tmp1   = cvCreateImage(cvGetSize(img),8,1);
 IplImage* tmp2   = cvCreateImage(cvGetSize(img),8,1);
-IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,3);  
+IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,1); 
+
+ IplImage* result   = cvCreateImage(cvGetSize(img),8,1);
+    IplImage* result1   = cvCreateImage(cvGetSize(img),8,1); 
+      IplImage* xxx   = cvCreateImage(cvGetSize(img),8,3);
   cvResetImageROI( img );
 
 
@@ -118,11 +122,14 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,3);
   cvSetImageROI(img,cvRect(x,y,width,height));
 
   IplImage* res   = cvCreateImage(cvGetSize(img),8,3);
-  res = cvQueryFrame(capture);
+  //res = cvQueryFrame(capture);
   
-  cvCvtColor(res, tmp1, CV_RGB2GRAY);
-  cvShowImage("result", tmp1);
-  
+  //cvCvtColor(res, tmp1, CV_RGB2GRAY);
+  //cvErode(tmp1, tmp1, kernel,1);
+ // cvShowImage("result", tmp1);
+
+  //cvShowImage("result", back);
+ 
   cvResetImageROI(img);
 
   while (1) {
@@ -132,17 +139,33 @@ IplImage* tmp3   = cvCreateImage(cvGetSize(img),8,3);
 
     cvRectangle(rimg,cvPoint(x,y),cvPoint(x+width, y+height),(CV_RGB(255,0,0)),1);
     cvSetImageROI(rimg,cvRect(x,y,width,height));
-    cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);  
-    IplImage* xxx   = cvCreateImage(cvGetSize(rimg),8,3);
-    xxx = cvQueryFrame(capture);
-    IplImage* result   = cvCreateImage(cvGetSize(rimg),8,1);
-    cvCvtColor(xxx, tmp2, CV_RGB2GRAY);
-   // cvAdd(tmp1, tmp1, tmp1);
-    cvSub(tmp2,tmp1,result);
-    cvShowImage("xxx", result);
-   
+    cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
     
-    cvResetImageROI( rimg ); 
+    xxx = cvQueryFrame(capture);
+
+    if(counter%MAXIMAGE==0)
+    {
+       cvCvtColor(xxx, tmp3, CV_RGB2GRAY);
+       cvCopy(tmp3,tmp1);
+    }
+     
+  
+    
+       
+    cvCvtColor(xxx, tmp2, CV_RGB2GRAY);
+    //cvAdd(tmp1, tmp1, tmp1);
+      //cvErode(tmp2, tmp2, kernel,1);
+    cvAbsDiff(tmp2,tmp1,result);
+    cvThreshold(result, result1, 15, 255, THRESH_BINARY);
+        cvErode(result1, result1,kernel,  3);
+    cvDilate(result1, result1,kernel,  3);
+
+
+   //cvAnd(tmp1, tmp2 ,result);
+    cvShowImage("xxx", result1);
+ 
+    cvResetImageROI( rimg );
+  
 
     cvSmooth(thresh, thresh, CV_MEDIAN, 7, 7);
 
