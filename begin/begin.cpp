@@ -14,12 +14,12 @@
 #define NUM_DEFECTS 8
 
 
-struct openHand {
+struct gesture {
   float hu1;
   float hu2;
   float hu3;
-  CvSeq* hull;
-  CvPoint* defects;
+  float num_def;
+  float num_hull;
 };
 
 struct indicFinger {
@@ -36,7 +36,7 @@ int y = 160;
 int width = 300;
 int height = 300;
 
-
+int minimum(int a, int b);
 
 using namespace std;
 using namespace cv;
@@ -96,7 +96,7 @@ int main(int argc, const char* argv[]) {
 
 //Variables for trackbar
   int h1=0;int s1=0;int v1=0;
-  int h2=0;int s2=0;int v2=0;
+  int h2=255;int s2=255;int v2=255;
 //Creating the trackbars
   cvCreateTrackbar("H1","cnt",&h1,255,0);
   cvCreateTrackbar("H2","cnt",&h2,255,0);
@@ -114,16 +114,20 @@ int main(int argc, const char* argv[]) {
   int i = 0;
   int MAXIMAGE = 10;
   CvMemStorage *  defects_st = cvCreateMemStorage(0);
+  //double area, max_area = 0.0;
+  //CvSeq *contours = NULL;
+  //CvSeq *tmp = NULL;
 
 
   CvMemStorage *  contour_st = cvCreateMemStorage(0);
-  CvSeq *defects, *hull = NULL;
+  CvSeq *defects, *hull2,  *hull = NULL;
   CvConvexityDefect *defect_array;
   CvMemStorage *  hull_st = cvCreateMemStorage(0);
+ // CvMemStorage *  hull_st2 = cvCreateMemStorage(0);
 
   CvPoint *xdefects;
   //calloc powoduje problemy :((((
-  xdefects = (CvPoint*)calloc(NUM_DEFECTS, sizeof(CvPoint));
+
   int num_defects;
   CvPoint hand_center;
   int hand_radius;
@@ -135,10 +139,15 @@ int main(int argc, const char* argv[]) {
   imgFF = cvQueryFrame(capture);
   cvSmooth(imgFF, tmp3, CV_MEDIAN, 7, 7);
   cvCvtColor(tmp3, imgGrayFF, CV_RGB2GRAY);
+  //cvErode(tmp1, tmp1, kernel,1);
+ // cvShowImage("result", tmp1);
 
+  //cvShowImage("result", back);
 
   cvResetImageROI(img);
-
+  int c;
+  gesture openHand;
+  int hullcount;
   while (1) {
 
     cvZero(imgCont);
@@ -148,15 +157,24 @@ int main(int argc, const char* argv[]) {
     cvSetImageROI(rimg,cvRect(x,y,width,height));
     cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
     cvCopy(rimg, imgCurr);
+    //imgCurr = cvQueryFrame(capture);
+    //cvSmooth(imgCurr, tmp3, CV_MEDIAN, 7, 7);
+    //imgCurr = cvQueryFrame(capture);
 
 
     cvCvtColor(imgCurr, imgGrayCurr, CV_RGB2GRAY);
-  
+    //cvAdd(tmp1, tmp1, tmp1);
+      //cvErode(tmp2, tmp2, kernel,1);
     cvAbsDiff(imgGrayCurr,imgGrayFF,imgDiff);
-  
+    //cvAnd(tmp1, tmp2, result);
+//   cvNot(result,tmp3);
     cvThreshold(imgDiff, tmp1, 15, 255, THRESH_BINARY);
     cvErode(tmp1, imgDiff, kernel,  1);
+    //cvDilate(result1, result1,kernel,  3);
 
+
+   //cvAnd(tmp1, tmp2 ,result);
+   // cvShowImage("xxx", result);
 
     cvResetImageROI( rimg );
 
@@ -166,7 +184,16 @@ int main(int argc, const char* argv[]) {
     cvErode(thresh,thresh,kernel,1);
     cvDilate(thresh,thresh,kernel,1);
     cvAnd(thresh, imgDiff, imgTbs);
+    cvDilate(imgTbs,imgTbs,kernel,1);
     cvCopy(imgTbs, tmp1);
+    //cvCopy(thresh,kopia2, NULL);
+
+    //cvCopy(thresh, kopia2, NULL);
+  /* cvFindContours modifies input image, so make a copy */
+    /*cvFindContours(kopia2, contour_st, &contours,
+     sizeof(CvContour), CV_RETR_EXTERNAL,
+     CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+     CvSeq *contour = contours;*/
 
 
 CvMemStorage * storage = cvCreateMemStorage(0);
@@ -184,6 +211,7 @@ for(contour = first; contour != 0; contour = contour->h_next)
     maxArea = bound.width * bound.height;
   }
 }
+
       if (maxC)
       {
        CvRect bound = cvBoundingRect(maxC,0);
@@ -193,108 +221,117 @@ for(contour = first; contour != 0; contour = contour->h_next)
 
 
        hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 0);
+      // hull2 = cvConvexHull2(maxC, hull_st2, CV_CLOCKWISE, 0);
+       //double hullArea = fabs(cvContourArea(hull, CV_WHOLE_SEQ, 0));
+       //printf("%f || %d\n", hullArea, maxArea);
+       
+       if ( hull){
 
+        cvDrawContours(imgCont,hull,CV_RGB(0,255,0),CV_RGB(0,255,0),CV_FILLED);
 
-       if (hull){
-    /* Get convexity defects of contour w.r.t. the convex hull */
+  
       //printf("HULL!\n");
        //cvDrawContours(kopia,hull,CV_RGB(255,255,0),CV_RGB(255,255,0),CV_FILLED); 
         defects = cvConvexityDefects(maxC, hull, defects_st);
         if (defects && defects->total) {
           defect_array = (CvConvexityDefect*)calloc(defects->total, sizeof(CvConvexityDefect));
+
           cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
-      //cvDrawContours(kopia,defects,CV_RGB(255,255,0),CV_RGB(255,255,0),CV_FILLED); 
-      // Average depth points to get hand center 
-          for (i = 0; i < defects->total && i < NUM_DEFECTS; i++) {
-            x1 += defect_array[i].depth_point->x;
-            y1 += defect_array[i].depth_point->y;
 
-            xdefects[i] = cvPoint(defect_array[i].depth_point->x,
-              defect_array[i].depth_point->y);
-          }
-
-
-          x1 /= defects->total;
-          y1 /= defects->total;
 
           num_defects = defects->total;
-          hand_center = cvPoint(x1, y1);
-
-      /*for(int j=0; j<num_defects;j++) {
-        printf(" defect depth for defect %d %f \n",j,defect_array[j].depth);
-        cvLine(kopia, *(defect_array[j].start), *(defect_array[j].depth_point),CV_RGB(255,255,0),1, CV_AA, 0 );
-        //cvCircle( kopia, *(defect_array[j].depth_point), 5, CV_RGB(0,0,164), 2, 8,0);
-        //cvCircle( kopia, *(defect_array[j].start), 5, CV_RGB(0,0,164), 2, 8,0);
-        cvLine(kopia, *(defect_array[j].depth_point), *(defect_array[j].end),CV_RGB(255,255,0),1, CV_AA, 0 );
-      }*/
-
-        int hullcount = hull->total;
+          hand_center =  cvPoint((bound.x+bound.x+bound.width)/2,(bound.y+bound.y+bound.height)/2);
 
 
+          for(int j=0; j<num_defects;j++) {
+        //printf(" defect depth for defect %d %f \n",j,defect_array[j].depth);
+            cvLine(imgCont, *(defect_array[j].start), *(defect_array[j].depth_point),CV_RGB(255,255,0),1, CV_AA, 0 );
+            cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,164), 2, 8,0);
+            cvCircle( imgCont, *(defect_array[j].start), 5, CV_RGB(0,0,164), 2, 8,0);
+            cvLine(imgCont, *(defect_array[j].depth_point), *(defect_array[j].end),CV_RGB(255,255,0),1, CV_AA, 0 );
+            cvLine(imgCont,hand_center, *(defect_array[j].end),CV_RGB(128,0,128),1, CV_AA, 0 );
+          }
 
-        CvPoint pt0 = **CV_GET_SEQ_ELEM( CvPoint*, hull, hullcount - 1 );
+        
 
-        for(int k = 0; k < hullcount; k++ )
-        {
+      
 
-          CvPoint pt = **CV_GET_SEQ_ELEM( CvPoint*, hull, k );
-          cvLine( imgCont, pt0, pt, CV_RGB( 0, 255, 0 ), 1, CV_AA, 0 );
-          pt0 = pt;
+            for (i = 0; i < defects->total; i++) {
+              int d = (x1 - defect_array[i].depth_point->x) *
+              (x1 - defect_array[i].depth_point->x) +
+              (y1 - defect_array[i].depth_point->y) *
+              (y1 - defect_array[i].depth_point->y);
+
+              dist += sqrt(d);
+            }
+
+            hand_radius = dist / defects->total;
+            cvCircle(imgCont, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0);
+            cvCircle(imgCont, hand_center, hand_radius, CV_RGB(255,0,0), 1, CV_AA, 0);
+            free(defect_array);
+
+          }
         }
-
-      /* Compute hand radius as mean of distances of
-         defects' depth point to hand center */
-
-     /* for (i = 0; i < defects->total; i++) {
-        int d = (x1 - defect_array[i].depth_point->x) *
-          (x1 - defect_array[i].depth_point->x) +
-          (y1 - defect_array[i].depth_point->y) *
-          (y1 - defect_array[i].depth_point->y);
-
-        dist += sqrt(d);
       }
 
-      hand_radius = dist / defects->total;
-      cvCircle(kopia, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0);
-      cvCircle(kopia, hand_center, hand_radius, CV_RGB(255,0,0), 1, CV_AA, 0);
-      free(defect_array);
-*/
-    }
-  }
-}
-
  //displaying images
-cvShowImage("Original Image",rimg);
-cvShowImage("Diff", imgDiff);
-cvShowImage("Thresholded Image",thresh);
-cvShowImage("Contours", imgCont);
-cvShowImage("TBS", imgTbs);
+      cvShowImage("Original Image",rimg);
+      cvShowImage("Diff", imgDiff);
+      cvShowImage("Thresholded Image",thresh);
+      cvShowImage("Contours", imgCont);
+      cvShowImage("TBS", imgTbs);
 
  //Stop the clock and show FPS
-time(&end);
-++counter;
-sec=difftime(end,start);
-fps=counter/sec;
- //printf("\n%lf",fps);
+      time(&end);
+      ++counter;
+      sec=difftime(end,start);
+      fps=counter/sec;
+
 
  // ESC key ends program
-if ((cvWaitKey(10) & 255) == 27) { 
-   /*  cvReleaseImage(&kopia);
-     
-       cvReleaseCapture(&capture);
-       cvReleaseImage(&img);
-       cvReleaseImage(&thresh);
-       cvReleaseImage(&rimg);
-       cvReleaseImage(&hsvimg);*/
-       break;
-     }
+      c = cvWaitKey(5) & 255 ;
 
 
-//cvReleaseMemStorage(&storage);
- } //while end
+  if (c == 27)
+  {
+    break;
+  } else if (c == 32)
+  {
+    printf("SPACJA\n");
 
- cvDestroyWindow("mywindow");
- cvDestroyWindow("afrerEffects");
+    static CvMoments* moments = new CvMoments();
+    cvMoments(maxC, moments);
+    static CvHuMoments* huMoments = new CvHuMoments();  
+    cvGetHuMoments(moments, huMoments);
 
- return 0;
-}
+    openHand.hu1 =  huMoments->hu1;
+    openHand.hu2 =  huMoments->hu2;
+    openHand.hu3 =  huMoments->hu3;
+    openHand.num_def = num_defects;
+   /* openHand.num_hull = hullcount;*/
+
+    cout<<"HU1:"<<openHand.hu1<<endl;
+    cout<<"HU2:"<<openHand.hu2<<endl;
+
+    cout<<"HU3:"<<openHand.hu3<<endl;
+
+    cout<<"DEF:"<<openHand.num_def<<endl;
+/*
+    cout<<"HULL:"<<openHand.num_hull<<endl;*/
+
+
+  }
+
+     } //while end
+
+     cvDestroyWindow("mywindow");
+     cvDestroyWindow("afrerEffects");
+
+     return 0;
+   }
+
+   int minimum(int a, int b)
+   {
+    if (a <= b) return a;
+    else return b;
+  }
