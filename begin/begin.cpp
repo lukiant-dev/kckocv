@@ -42,7 +42,27 @@ int width = 300;
 int height = 300;
 
 int minimum(int a, int b);
+void mousemove(int x_pos, int y_pos)
+{
+    ///Strings that will contain the conversions
+    string xcord; string ycord;
 
+    ///These are buffers or something? I don't really know... lol.
+    stringstream sstr; stringstream sstr2;
+
+    ///Conversion to regular string happens here
+    sstr<<5*x_pos;
+    xcord = sstr.str();
+    sstr2<<5*y_pos;
+    ycord = sstr2.str();
+
+    ///Getting the command string
+    string command = "xdotool mousemove " + xcord + " " + ycord;
+
+    ///Converting command string to a form that system() accepts.
+    const char *com = command.c_str();
+    system(com);
+}
 int main(int argc, const char* argv[]) {
 
   //variables for fps counting
@@ -419,6 +439,30 @@ int main(int argc, const char* argv[]) {
 
     }
   }
+
+
+    static CvMoments* moments = new CvMoments();
+  cvMoments(maxC, moments);
+  static CvHuMoments* huMoments = new CvHuMoments();  
+  cvGetHuMoments(moments, huMoments);
+
+  if ((abs(openHand.hu1 - huMoments->hu1)<0.02) &&
+  (abs(openHand.hu2 - huMoments->hu2)<0.01) &&
+  (abs(openHand.hu3 - huMoments->hu3)<0.001) &&
+  (openHand.num_def == actualDefects))
+  { 
+    printf("x: %d y: %d  l: %d \n", hand_center.x, hand_center.y, licznik);
+    licznik++;
+    mousemove(hand_center.x,hand_center.y);
+  }
+  
+
+  //break;
+
+
+    //
+
+    actualDefects = 0;
       }
 
     //displaying images
@@ -443,27 +487,7 @@ int main(int argc, const char* argv[]) {
 
 
 
-  static CvMoments* moments = new CvMoments();
-  cvMoments(maxC, moments);
-  static CvHuMoments* huMoments = new CvHuMoments();  
-  cvGetHuMoments(moments, huMoments);
-
-  if ((abs(openHand.hu1 - huMoments->hu1)<0.02) &&
-  (abs(openHand.hu2 - huMoments->hu2)<0.01) &&
-  (abs(openHand.hu3 - huMoments->hu3)<0.001) &&
-  (openHand.num_def == actualDefects))
-  { 
-    printf("HA! %d\n", licznik);
-    licznik++;
-  }
   
-
-  //break;
-
-
-    //
-
-    actualDefects = 0;  
 
   } //while end
 
