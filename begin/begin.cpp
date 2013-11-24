@@ -55,6 +55,7 @@ int main(int argc, const char* argv[]) {
   CvCapture* capture = cvCaptureFromCAM(0);
   IplImage* img = cvQueryFrame(capture);
   IplImage* rimg   = cvCreateImage(cvGetSize(img),8,3);
+
   // Setting ROI for smaller image
   cvSetImageROI(img,cvRect(x,y,width,height));
   IplImage* imgTbs = cvCreateImage(cvGetSize(img), 8, 1);
@@ -172,13 +173,13 @@ int main(int argc, const char* argv[]) {
     
     cvErode(thresh,thresh,kernel,1);
     cvDilate(thresh,thresh,kernel,1);
-    
-    cvAnd(thresh, imgDiff, imgTbs);
+    cvCopy(thresh, tmp1);
+/*    cvAnd(thresh, imgDiff, imgTbs);
     
     cvErode(imgTbs,imgTbs,kernel,1);
     cvDilate(imgTbs,imgTbs,kernel,1);
     
-    cvCopy(imgTbs, tmp1);
+    cvCopy(imgTbs, tmp1);*/
     //cvCopy(thresh,kopia2, NULL);
 
 
@@ -186,8 +187,9 @@ int main(int argc, const char* argv[]) {
 
     CvSeq * first = NULL;
     CvSeq * contour = NULL;
-    cvFindContours(tmp1, storage, &first, sizeof(CvContour),CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+    cvFindContours(thresh, storage, &first, sizeof(CvContour),CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
     maxC = first;
+    maxArea = 0.0;
 
     for(contour = first; contour != 0; contour = contour->h_next)
       {
@@ -232,7 +234,7 @@ int main(int argc, const char* argv[]) {
 
 
       for(int j=0; j<minimum(8, num_defects);j++) {
-        /
+        
         if(defect_array[j].depth > bound.height/5) 
     {
       cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
@@ -249,7 +251,7 @@ int main(int argc, const char* argv[]) {
     //displaying images
     cvShowImage("Original Image",rimg);
     cvShowImage("Diff", imgDiff);
-    cvShowImage("Thresholded Image",thresh);
+    cvShowImage("Thresholded Image",tmp1);
     cvShowImage("Contours", imgCont);
     cvShowImage("TBS", imgTbs);
 
