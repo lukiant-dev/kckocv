@@ -31,6 +31,10 @@ struct indicFinger {
   CvPoint* defects;
 };
 
+// debug ! drugi while
+int licznik = 0;
+
+
 /*Czerwony prostokąt*/
 int x = 360;
 int y = 160;
@@ -235,7 +239,7 @@ int main(int argc, const char* argv[]) {
 
       for(int j=0; j<minimum(8, num_defects);j++) {
         
-        if(defect_array[j].depth > bound.height/5) 
+        if(defect_array[j].depth > bound.height/6) 
     {
       cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
       actualDefects++;
@@ -295,6 +299,178 @@ int main(int argc, const char* argv[]) {
     actualDefects = 0;  
 
   } //while end
+  cvZero(imgCont);
+  cvZero(thresh);
+  cvZero(rimg);
+  cvZero(tmp1);
+  cvZero(tmp3);
+  cvZero(imgCurr);
+  cvZero(imgTbs);
+  cvZero(imgDiff);
+  cvZero(imgGrayFF);
+  cvZero(imgGrayCurr);
+  cvZero(img);
+  //cvZerp();
+  while (1) {
+
+    cvZero(imgCont);
+    rimg = cvQueryFrame(capture);
+
+    cvRectangle(rimg,cvPoint(x,y),cvPoint(x+width, y+height),(CV_RGB(255,0,0)),1);
+    cvSetImageROI(rimg,cvRect(x,y,width,height));
+    cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
+    cvCopy(rimg, imgCurr);
+    //imgCurr = cvQueryFrame(capture);
+    cvSmooth(imgCurr, tmp3, CV_MEDIAN, 7, 7);
+    //imgCurr = cvQueryFrame(capture);
+
+
+    cvCvtColor(tmp3, imgGrayCurr, CV_RGB2GRAY);
+    cvErode(imgGrayCurr, imgGrayCurr, kernel, 1);
+    cvDilate(imgGrayCurr, imgGrayCurr, kernel, 1);
+    //cvCopy(tmp1, imgGrayCurr);
+    //cvAdd(tmp1, tmp1, tmp1);
+    //cvErode(tmp2, tmp2, kernel,1);
+    cvAbsDiff(imgGrayCurr,imgGrayFF,imgDiff);
+    //cvAnd(tmp1, tmp2, result);
+    //   cvNot(result,tmp3);
+    cvThreshold(imgDiff, tmp1, t1, 255, THRESH_BINARY);
+    cvDilate(imgDiff, imgDiff,kernel,  1);
+    cvErode(tmp1, imgDiff, kernel,  1);
+    
+    cvResetImageROI( rimg );
+
+
+    cvSmooth(thresh, thresh, CV_MEDIAN, 7, 7);
+    
+    cvErode(thresh,thresh,kernel,1);
+    cvDilate(thresh,thresh,kernel,1);
+    
+    cvErode(thresh,thresh,kernel,1);
+    cvDilate(thresh,thresh,kernel,1);
+    cvCopy(thresh, tmp1);
+/*    cvAnd(thresh, imgDiff, imgTbs);
+    
+    cvErode(imgTbs,imgTbs,kernel,1);
+    cvDilate(imgTbs,imgTbs,kernel,1);
+    
+    cvCopy(imgTbs, tmp1);*/
+    //cvCopy(thresh,kopia2, NULL);
+
+
+    CvSeq * first = NULL;
+    CvSeq * contour = NULL;
+    cvFindContours(thresh, storage, &first, sizeof(CvContour),CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+    maxC = first;
+    maxArea = 0.0;
+
+    for(contour = first; contour != 0; contour = contour->h_next)
+      {
+  CvRect bound = cvBoundingRect(contour,0);
+  if(maxArea < bound.width * bound.height)
+    {
+      maxC = contour;
+      maxArea = bound.width * bound.height;
+    }
+      }
+
+    /*if (maxC) {
+      maxC = cvApproxPoly(maxC, sizeof(CvContour),contour_st, CV_POLY_APPROX_DP, 2,1);
+
+      }*/
+
+    if (maxC)
+      {
+  //Rysowanie największego konturu + otaczającego go prostokąta
+  CvRect bound = cvBoundingRect(maxC,0);
+  cvDrawContours(imgCont,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
+  cvRectangle(imgCont,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
+  hand_center =  cvPoint((bound.x+bound.x+bound.width)/2,(bound.y+bound.y+bound.height)/2);
+  cvCircle(imgCont, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0); //rysowanie środka kwadratu = środek dłoni
+
+  hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 1);
+  hull2 = cvConvexHull2(maxC, hull_st2, CV_CLOCKWISE, 0);
+
+  if (hull2 && hull){
+
+    //Rysowanie convex hulla
+    cvDrawContours(imgCont,hull,CV_RGB(0,255,0),CV_RGB(0,255,0),CV_FILLED);
+
+    defects = cvConvexityDefects(maxC, hull2, defects_st);
+    if (defects && defects->total) {
+      defect_array = (CvConvexityDefect*)calloc(defects->total, sizeof(CvConvexityDefect));
+
+      cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
+
+      num_defects = defects->total;
+
+
+
+      for(int j=0; j<minimum(8, num_defects);j++) {
+        
+        if(defect_array[j].depth > bound.height/6) 
+    {
+      cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
+      actualDefects++;
+    }
+      }
+
+      free(defect_array);
+
+    }
+  }
+      }
+
+    //displaying images
+    cvShowImage("Original Image",rimg);
+    cvShowImage("Diff", imgDiff);
+    cvShowImage("Thresholded Image",tmp1);
+    cvShowImage("Contours", imgCont);
+    cvShowImage("TBS", imgTbs);
+
+    //Stop the clock and show FPS
+    //time(&end);
+    /*++counter;
+      sec=difftime(end,start);
+      fps=counter/sec*/;
+
+
+    c = cvWaitKey(10) & 255 ;
+    if (c == 27)
+      {
+  break;
+      } 
+
+
+
+  static CvMoments* moments = new CvMoments();
+  cvMoments(maxC, moments);
+  static CvHuMoments* huMoments = new CvHuMoments();  
+  cvGetHuMoments(moments, huMoments);
+
+  if ((abs(openHand.hu1 - huMoments->hu1)<0.02) &&
+  (abs(openHand.hu2 - huMoments->hu2)<0.01) &&
+  (abs(openHand.hu3 - huMoments->hu3)<0.001) &&
+  (openHand.num_def == actualDefects))
+  { 
+    printf("HA! %d\n", licznik);
+    licznik++;
+  }
+  
+
+  //break;
+
+
+    //
+
+    actualDefects = 0;  
+
+  } //while end
+
+
+
+
+
 
   cvReleaseCapture(&capture);
   cvReleaseImage(&img);
