@@ -45,23 +45,52 @@ int minimum(int a, int b);
 void mousemove(int x_pos, int y_pos)
 {
     ///Strings that will contain the conversions
-    string xcord; string ycord;
+  string xcord; string ycord;
 
     ///These are buffers or something? I don't really know... lol.
-    stringstream sstr; stringstream sstr2;
-
+  stringstream sstr; stringstream sstr2;
+  static int prevx_pos;
+  static int prevy_pos;
+  static bool first = true;
     ///Conversion to regular string happens here
-    sstr<<5*x_pos;
+  /*sstr<<5*x_pos;
+  xcord = sstr.str();
+  sstr2<<5*y_pos;
+  ycord = sstr2.str();*/
+
+  
+  string command;
+  if(!first)
+  {
+    int diffX = x_pos-prevx_pos;
+    int diffY = y_pos-prevy_pos;
+    printf("X : %d\n", diffX);
+    printf("Y: %d\n", diffY);
+    
+    ///Getting the command string
+    if(diffX>=0) 
+      sstr<<(-1)*diffX;
+    else
+      sstr<<abs(diffX);
+
+    sstr2<<diffY;
+
     xcord = sstr.str();
-    sstr2<<5*y_pos;
     ycord = sstr2.str();
 
-    ///Getting the command string
-    string command = "xdotool mousemove " + xcord + " " + ycord;
-
+    if((diffX >=0) || (diffY <0))
+      command = "xdotool mousemove_relative -- " + xcord + " " + ycord;
+    else
+      command = "xdotool mousemove_relative " + xcord + " " + ycord;
+  }
     ///Converting command string to a form that system() accepts.
-    const char *com = command.c_str();
-    system(com);
+  const char *com = command.c_str();
+  system(com);
+
+  prevx_pos = x_pos;
+  prevy_pos = y_pos;
+  first = false;
+
 }
 int main(int argc, const char* argv[]) {
 
@@ -81,7 +110,7 @@ int main(int argc, const char* argv[]) {
   IplImage* rimg   = cvCreateImage(cvGetSize(img),8,3);
 
   // Setting ROI for smaller image
-  cvSetImageROI(img,cvRect(x,y,width,height));
+ // cvSetImageROI(img,cvRect(x,y,width,height));
   IplImage* imgTbs = cvCreateImage(cvGetSize(img), 8, 1);
   IplImage* thresh  = cvCreateImage(cvGetSize(img),8,1);
   IplImage* imgCont = cvCreateImage(cvGetSize(img), 8, 3);
@@ -95,7 +124,7 @@ int main(int argc, const char* argv[]) {
   IplImage* tmp1  = cvCreateImage(cvGetSize(img),8,1); 
   IplImage* tmp3  = cvCreateImage(cvGetSize(img),8,3); 
   IplImage* sum  = cvCreateImage(cvGetSize(img),32,1); 
-  cvResetImageROI( img );
+  //cvResetImageROI( img );
 
 
   //Windows for displaying images and trackbars
@@ -142,21 +171,21 @@ int main(int argc, const char* argv[]) {
   int actualDefects = 0;
   CvPoint hand_center;
 
-  cvSetImageROI(img,cvRect(x,y,width,height));
+ // cvSetImageROI(img,cvRect(x,y,width,height));
   while (counter <= MAXIMAGE)
-    {
+  {
 
-      imgFF = cvQueryFrame(capture);
-      cvSmooth(imgFF, tmp3, CV_MEDIAN, 7, 7);
-      cvCvtColor(tmp3, imgGrayFF, CV_RGB2GRAY);
+    imgFF = cvQueryFrame(capture);
+    cvSmooth(imgFF, tmp3, CV_MEDIAN, 7, 7);
+    cvCvtColor(tmp3, imgGrayFF, CV_RGB2GRAY);
       //    cvCopy(tmp1, imgGrayFF);
 
-      cvAcc(imgGrayFF, sum);
+    cvAcc(imgGrayFF, sum);
 
-      counter++;
+    counter++;
 
-    }
-  cvResetImageROI(img);
+  }
+  //cvResetImageROI(img);
   cvConvertScale(sum, imgGrayFF, 1.0/MAXIMAGE, 0);
 
 
@@ -166,7 +195,7 @@ int main(int argc, const char* argv[]) {
     rimg = cvQueryFrame(capture);
 
     cvRectangle(rimg,cvPoint(x,y),cvPoint(x+width, y+height),(CV_RGB(255,0,0)),1);
-    cvSetImageROI(rimg,cvRect(x,y,width,height));
+    //cvSetImageROI(rimg,cvRect(x,y,width,height));
     cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
     cvCopy(rimg, imgCurr);
     //imgCurr = cvQueryFrame(capture);
@@ -187,7 +216,7 @@ int main(int argc, const char* argv[]) {
     cvDilate(imgDiff, imgDiff,kernel,  1);
     cvErode(tmp1, imgDiff, kernel,  1);
     
-    cvResetImageROI( rimg );
+    //cvResetImageROI( rimg );
 
 
     cvSmooth(thresh, thresh, CV_MEDIAN, 7, 7);
@@ -216,27 +245,27 @@ int main(int argc, const char* argv[]) {
     maxArea = 0.0;
 
     for(contour = first; contour != 0; contour = contour->h_next)
-      {
-  CvRect bound = cvBoundingRect(contour,0);
-  if(maxArea < bound.width * bound.height)
     {
-      maxC = contour;
-      maxArea = bound.width * bound.height;
-    }
+      CvRect bound = cvBoundingRect(contour,0);
+      if(maxArea < bound.width * bound.height)
+      {
+        maxC = contour;
+        maxArea = bound.width * bound.height;
       }
+    }
 
     /*if (maxC) {
       maxC = cvApproxPoly(maxC, sizeof(CvContour),contour_st, CV_POLY_APPROX_DP, 2,1);
 
       }*/
 
-    if (maxC)
+      if (maxC)
       {
   //Rysowanie największego konturu + otaczającego go prostokąta
-  CvRect bound = cvBoundingRect(maxC,0);
-  cvDrawContours(imgCont,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
-  cvRectangle(imgCont,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
-  hand_center =  cvPoint((bound.x+bound.x+bound.width)/2,(bound.y+bound.y+bound.height)/2);
+        CvRect bound = cvBoundingRect(maxC,0);
+        cvDrawContours(imgCont,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
+        cvRectangle(imgCont,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
+        hand_center =  cvPoint((bound.x+bound.x+bound.width)/2,(bound.y+bound.y+bound.height)/2);
   cvCircle(imgCont, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0); //rysowanie środka kwadratu = środek dłoni
 
   hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 1);
@@ -258,26 +287,26 @@ int main(int argc, const char* argv[]) {
 
 
       for(int j=0; j<minimum(8, num_defects);j++) {
-        
+
         if(defect_array[j].depth > bound.height/6) 
-    {
-      cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
-      actualDefects++;
-    }
+        {
+          cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
+          actualDefects++;
+        }
       }
 
       free(defect_array);
 
     }
   }
-      }
+}
 
     //displaying images
-    cvShowImage("Original Image",rimg);
-    cvShowImage("Diff", imgDiff);
-    cvShowImage("Thresholded Image",tmp1);
-    cvShowImage("Contours", imgCont);
-    cvShowImage("TBS", imgTbs);
+cvShowImage("Original Image",rimg);
+cvShowImage("Diff", imgDiff);
+cvShowImage("Thresholded Image",tmp1);
+cvShowImage("Contours", imgCont);
+cvShowImage("TBS", imgTbs);
 
     //Stop the clock and show FPS
     //time(&end);
@@ -286,37 +315,37 @@ int main(int argc, const char* argv[]) {
       fps=counter/sec*/;
 
 
-    c = cvWaitKey(10) & 255 ;
+      c = cvWaitKey(10) & 255 ;
 
 
 
-    if (c == 27)
+      if (c == 27)
       {
-  break;
+        break;
       } else if (c == 32)
       {
 
-  static CvMoments* moments = new CvMoments();
-  cvMoments(maxC, moments);
-  static CvHuMoments* huMoments = new CvHuMoments();  
-  cvGetHuMoments(moments, huMoments);
+        static CvMoments* moments = new CvMoments();
+        cvMoments(maxC, moments);
+        static CvHuMoments* huMoments = new CvHuMoments();  
+        cvGetHuMoments(moments, huMoments);
 
-  openHand.hu1 =  huMoments->hu1;
-  openHand.hu2 =  huMoments->hu2;
-  openHand.hu3 =  huMoments->hu3;
-  openHand.num_def = actualDefects;
+        openHand.hu1 =  huMoments->hu1;
+        openHand.hu2 =  huMoments->hu2;
+        openHand.hu3 =  huMoments->hu3;
+        openHand.num_def = actualDefects;
 
-  cout<<"HU1:"<<openHand.hu1<<endl;
-  cout<<"HU2:"<<openHand.hu2<<endl;  
-  cout<<"HU3:"<<openHand.hu3<<endl;
-  cout<<"DEF:"<<openHand.num_def<<endl;
+        cout<<"HU1:"<<openHand.hu1<<endl;
+        cout<<"HU2:"<<openHand.hu2<<endl;  
+        cout<<"HU3:"<<openHand.hu3<<endl;
+        cout<<"DEF:"<<openHand.num_def<<endl;
 
-  break;
+        break;
       }//1. while end
 
     //
 
-    actualDefects = 0;  
+      actualDefects = 0;  
 
   } //while end
   cvZero(imgCont);
@@ -337,7 +366,7 @@ int main(int argc, const char* argv[]) {
     rimg = cvQueryFrame(capture);
 
     cvRectangle(rimg,cvPoint(x,y),cvPoint(x+width, y+height),(CV_RGB(255,0,0)),1);
-    cvSetImageROI(rimg,cvRect(x,y,width,height));
+    //cvSetImageROI(rimg,cvRect(x,y,width,height));
     cvInRangeS(rimg,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
     cvCopy(rimg, imgCurr);
     //imgCurr = cvQueryFrame(capture);
@@ -358,7 +387,7 @@ int main(int argc, const char* argv[]) {
     cvDilate(imgDiff, imgDiff,kernel,  1);
     cvErode(tmp1, imgDiff, kernel,  1);
     
-    cvResetImageROI( rimg );
+    //cvResetImageROI( rimg );
 
 
     cvSmooth(thresh, thresh, CV_MEDIAN, 7, 7);
@@ -385,27 +414,27 @@ int main(int argc, const char* argv[]) {
     maxArea = 0.0;
 
     for(contour = first; contour != 0; contour = contour->h_next)
-      {
-  CvRect bound = cvBoundingRect(contour,0);
-  if(maxArea < bound.width * bound.height)
     {
-      maxC = contour;
-      maxArea = bound.width * bound.height;
-    }
+      CvRect bound = cvBoundingRect(contour,0);
+      if(maxArea < bound.width * bound.height)
+      {
+        maxC = contour;
+        maxArea = bound.width * bound.height;
       }
+    }
 
     /*if (maxC) {
       maxC = cvApproxPoly(maxC, sizeof(CvContour),contour_st, CV_POLY_APPROX_DP, 2,1);
 
       }*/
 
-    if (maxC)
+      if (maxC)
       {
   //Rysowanie największego konturu + otaczającego go prostokąta
-  CvRect bound = cvBoundingRect(maxC,0);
-  cvDrawContours(imgCont,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
-  cvRectangle(imgCont,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
-  hand_center =  cvPoint((bound.x+bound.x+bound.width)/2,(bound.y+bound.y+bound.height)/2);
+        CvRect bound = cvBoundingRect(maxC,0);
+        cvDrawContours(imgCont,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
+        cvRectangle(imgCont,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),1);
+        hand_center =  cvPoint((bound.x+bound.x+bound.width)/2,(bound.y+bound.y+bound.height)/2);
   cvCircle(imgCont, hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0); //rysowanie środka kwadratu = środek dłoni
 
   hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 1);
@@ -427,12 +456,12 @@ int main(int argc, const char* argv[]) {
 
 
       for(int j=0; j<minimum(8, num_defects);j++) {
-        
+
         if(defect_array[j].depth > bound.height/6) 
-    {
-      cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
-      actualDefects++;
-    }
+        {
+          cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
+          actualDefects++;
+        }
       }
 
       free(defect_array);
@@ -441,17 +470,17 @@ int main(int argc, const char* argv[]) {
   }
 
 
-    static CvMoments* moments = new CvMoments();
+  static CvMoments* moments = new CvMoments();
   cvMoments(maxC, moments);
   static CvHuMoments* huMoments = new CvHuMoments();  
   cvGetHuMoments(moments, huMoments);
 
   if ((abs(openHand.hu1 - huMoments->hu1)<0.02) &&
-  (abs(openHand.hu2 - huMoments->hu2)<0.01) &&
-  (abs(openHand.hu3 - huMoments->hu3)<0.001) &&
-  (openHand.num_def == actualDefects))
+    (abs(openHand.hu2 - huMoments->hu2)<0.01) &&
+    (abs(openHand.hu3 - huMoments->hu3)<0.001) &&
+    (openHand.num_def == actualDefects))
   { 
-    printf("x: %d y: %d  l: %d \n", hand_center.x, hand_center.y, licznik);
+   // printf("x: %d y: %d  l: %d \n", hand_center.x, hand_center.y, licznik);
     licznik++;
     mousemove(hand_center.x,hand_center.y);
   }
@@ -462,15 +491,15 @@ int main(int argc, const char* argv[]) {
 
     //
 
-    actualDefects = 0;
-      }
+  actualDefects = 0;
+}
 
     //displaying images
-    cvShowImage("Original Image",rimg);
-    cvShowImage("Diff", imgDiff);
-    cvShowImage("Thresholded Image",tmp1);
-    cvShowImage("Contours", imgCont);
-    cvShowImage("TBS", imgTbs);
+cvShowImage("Original Image",rimg);
+cvShowImage("Diff", imgDiff);
+cvShowImage("Thresholded Image",tmp1);
+cvShowImage("Contours", imgCont);
+cvShowImage("TBS", imgTbs);
 
     //Stop the clock and show FPS
     //time(&end);
@@ -479,15 +508,15 @@ int main(int argc, const char* argv[]) {
       fps=counter/sec*/;
 
 
-    c = cvWaitKey(10) & 255 ;
-    if (c == 27)
+      c = cvWaitKey(10) & 255 ;
+      if (c == 27)
       {
-  break;
+        break;
       } 
 
 
 
-  
+
 
   } //while end
 
