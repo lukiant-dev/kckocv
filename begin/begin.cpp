@@ -23,13 +23,7 @@ struct gesture {
   float num_hull;
 };
 
-struct indicFinger {
-  float hu1;
-  float hu2;
-  float hu3;
-  CvSeq* hull;
-  CvPoint* defects;
-};
+
 
 // debug ! drugi while
 int licznik = 0;
@@ -42,7 +36,7 @@ int width = 300;
 int height = 300;
 
 int minimum(int a, int b);
-void mousemove(int x_pos, int y_pos)
+void mousemove(int x_pos, int y_pos, int licznik)
 {
     ///Strings that will contain the conversions
   string xcord; string ycord;
@@ -66,14 +60,14 @@ void mousemove(int x_pos, int y_pos)
     int diffY = y_pos-prevy_pos;
     printf("X : %d\n", diffX);
     printf("Y: %d\n", diffY);
-    
+
     ///Getting the command string
     if(diffX>=0) 
-      sstr<<(-1)*diffX;
+      sstr<<(-3)*diffX;
     else
       sstr<<abs(diffX);
 
-    sstr2<<diffY;
+    sstr2<<3*diffY;
 
     xcord = sstr.str();
     ycord = sstr2.str();
@@ -99,7 +93,7 @@ int main(int argc, const char* argv[]) {
      double sec,fps;
   */
   int c; //naciśnięty przycisk klawiatury
-  gesture openHand;
+  gesture moveHand, clickHand, closeHand;
   int hullcount;
 
   IplConvKernel*  kernel = cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL);
@@ -132,13 +126,13 @@ int main(int argc, const char* argv[]) {
   cvNamedWindow("cnt",CV_WINDOW_AUTOSIZE);
   cvNamedWindow("Contours", CV_WINDOW_AUTOSIZE);
   cvNamedWindow("Thresholded Image", CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("TBS", CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("Diff", CV_WINDOW_AUTOSIZE);
+  // cvNamedWindow("TBS", CV_WINDOW_AUTOSIZE);
+  // cvNamedWindow("Diff", CV_WINDOW_AUTOSIZE);
   cvMoveWindow("cnt", 1000, 0);
   cvMoveWindow("Contours", 700, 0);
-  cvMoveWindow("TBS", 0,500);
+  //cvMoveWindow("TBS", 0,500);
   cvMoveWindow("Thresholded Image", 700, 500);
-  cvMoveWindow("Diff", 1000, 500);
+  //cvMoveWindow("Diff", 1000, 500);
 
   //Variables for trackbar
   int h1=0;int s1=0;int v1=0;
@@ -288,7 +282,7 @@ int main(int argc, const char* argv[]) {
 
       for(int j=0; j<minimum(8, num_defects);j++) {
 
-        if(defect_array[j].depth > bound.height/6) 
+        if(defect_array[j].depth > bound.height/10) 
         {
           cvCircle( imgCont, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
           actualDefects++;
@@ -303,10 +297,10 @@ int main(int argc, const char* argv[]) {
 
     //displaying images
 cvShowImage("Original Image",rimg);
-cvShowImage("Diff", imgDiff);
+//cvShowImage("Diff", imgDiff);
 cvShowImage("Thresholded Image",tmp1);
 cvShowImage("Contours", imgCont);
-cvShowImage("TBS", imgTbs);
+//cvShowImage("TBS", imgTbs);
 
     //Stop the clock and show FPS
     //time(&end);
@@ -322,7 +316,7 @@ cvShowImage("TBS", imgTbs);
       if (c == 27)
       {
         break;
-      } else if (c == 32)
+      } else if (c == 49)
       {
 
         static CvMoments* moments = new CvMoments();
@@ -330,22 +324,47 @@ cvShowImage("TBS", imgTbs);
         static CvHuMoments* huMoments = new CvHuMoments();  
         cvGetHuMoments(moments, huMoments);
 
-        openHand.hu1 =  huMoments->hu1;
-        openHand.hu2 =  huMoments->hu2;
-        openHand.hu3 =  huMoments->hu3;
-        openHand.num_def = actualDefects;
+        closeHand.hu1 =  huMoments->hu1;
+        closeHand.hu2 =  huMoments->hu2;
+        closeHand.hu3 =  huMoments->hu3;
+        closeHand.num_def = actualDefects;
 
-        cout<<"HU1:"<<openHand.hu1<<endl;
+/*        cout<<"HU1:"<<openHand.hu1<<endl;
         cout<<"HU2:"<<openHand.hu2<<endl;  
         cout<<"HU3:"<<openHand.hu3<<endl;
         cout<<"DEF:"<<openHand.num_def<<endl;
+*/
+        //break;
+      }else if(c==50)
+      {
+        static CvMoments* moments = new CvMoments();
+        cvMoments(maxC, moments);
+        static CvHuMoments* huMoments = new CvHuMoments();  
+        cvGetHuMoments(moments, huMoments);
 
-        break;
-      }//1. while end
+        clickHand.hu1 =  huMoments->hu1;
+        clickHand.hu2 =  huMoments->hu2;
+        clickHand.hu3 =  huMoments->hu3;
+        clickHand.num_def = actualDefects;
+
+      } else if (c==51)
+      {
+       static CvMoments* moments = new CvMoments();
+       cvMoments(maxC, moments);
+       static CvHuMoments* huMoments = new CvHuMoments();  
+       cvGetHuMoments(moments, huMoments);
+
+       moveHand.hu1 =  huMoments->hu1;
+       moveHand.hu2 =  huMoments->hu2;
+       moveHand.hu3 =  huMoments->hu3;
+       moveHand.num_def = actualDefects;
+
+       break;
+     }
 
     //
 
-      actualDefects = 0;  
+     actualDefects = 0;  
 
   } //while end
   cvZero(imgCont);
@@ -475,15 +494,29 @@ cvShowImage("TBS", imgTbs);
   static CvHuMoments* huMoments = new CvHuMoments();  
   cvGetHuMoments(moments, huMoments);
 
-  if ((abs(openHand.hu1 - huMoments->hu1)<0.02) &&
-    (abs(openHand.hu2 - huMoments->hu2)<0.01) &&
-    (abs(openHand.hu3 - huMoments->hu3)<0.001) &&
-    (openHand.num_def == actualDefects))
+  if ((abs(moveHand.hu1 - huMoments->hu1)<0.02) &&
+    (abs(moveHand.hu2 - huMoments->hu2)<0.01) &&
+    (abs(moveHand.hu3 - huMoments->hu3)<0.001) &&
+    (moveHand.num_def == actualDefects))
   { 
    // printf("x: %d y: %d  l: %d \n", hand_center.x, hand_center.y, licznik);
-    licznik++;
-    mousemove(hand_center.x,hand_center.y);
+    /*licznik++;
+    mousemove(hand_center.x,hand_center.y, licznik);*/
+    printf("MOVE!\n");
+  } else if ((abs(closeHand.hu1 - huMoments->hu1)<0.02) &&
+    (abs(closeHand.hu2 - huMoments->hu2)<0.01) &&
+    (abs(closeHand.hu3 - huMoments->hu3)<0.001) &&
+    (closeHand.num_def == actualDefects))
+  {
+    printf("CLOSE!\n");
+  } else if ((abs(clickHand.hu1 - huMoments->hu1)<0.02) &&
+    (abs(clickHand.hu2 - huMoments->hu2)<0.01) &&
+    (abs(clickHand.hu3 - huMoments->hu3)<0.001) &&
+    (clickHand.num_def == actualDefects))
+  {
+    printf("CLICK!\n");
   }
+
   
 
   //break;
@@ -496,10 +529,10 @@ cvShowImage("TBS", imgTbs);
 
     //displaying images
 cvShowImage("Original Image",rimg);
-cvShowImage("Diff", imgDiff);
+//cvShowImage("Diff", imgDiff);
 cvShowImage("Thresholded Image",tmp1);
 cvShowImage("Contours", imgCont);
-cvShowImage("TBS", imgTbs);
+//cvShowImage("TBS", imgTbs);
 
     //Stop the clock and show FPS
     //time(&end);
