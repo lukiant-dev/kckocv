@@ -30,10 +30,8 @@ gesture closeHand, clickHand, moveHand;
 int h1=0, s1=0, v1=0, h2=255, s2=255, v2=255;
 CvRect bound;
 CvPoint hand_center;
-int x = 360;
-int y = 160;
-int width = 300;
-int height = 300;
+int x = 360, y = 160, width = 300, height = 300;
+bool endProgram = false;
 
 void init_windows() {
   //Windows for displaying images and trackbars
@@ -86,21 +84,20 @@ CvSeq * getBiggestContour(IplImage *image)
  return maxC;
 }
 
-void displayContAndHull(CvSeq *maxC, IplImage *image, int opt)
+void displayContAndHull(CvSeq *maxC, IplImage *image)
 {
   CvMemStorage *  hull_st = cvCreateMemStorage(0);
   CvSeq *hull = cvConvexHull2(maxC, hull_st, CV_CLOCKWISE, 1);
   bound = cvBoundingRect(maxC,0);
   hand_center =  cvPoint((bound.x+bound.x+bound.width)/2,(bound.y+bound.y+bound.height)/2);
 
-  if (opt == 1) 
-    cvSetImageROI(image,cvRect(x,y,width,height));
+
+  cvSetImageROI(image,cvRect(x,y,width,height));
   cvDrawContours(image,maxC,CV_RGB(0,255,255),CV_RGB(0,255,255),CV_FILLED);
   cvRectangle(image,cvPoint(bound.x,bound.y),cvPoint(bound.x+bound.width,bound.y+bound.height),CV_RGB(255,0,0),3);
   cvCircle(image , hand_center, 5, CV_RGB(255,0,255), 1, CV_AA, 0); //rysowanie środka kwadratu = środek dłoni
   cvDrawContours(image,hull,CV_RGB(0,255,0),CV_RGB(0,255,0),10);
-  if (opt == 1) 
-    cvResetImageROI(image);
+  cvResetImageROI(image);
 
   cvReleaseMemStorage(&hull_st);
 }
@@ -205,11 +202,7 @@ CvRect detectFaceInImage(IplImage *inputImg, CvHaarClassifierCascade* cascade)
   return rc;// Return the biggest face found, or (-1,-1,-1,-1).
 }
 
-void calibration(CvCapture *capture) {
-  //creating capture image
-  //CvCapture* capture = cvCaptureFromCAM(0);
-  /*Czerwony prostokąt*/
-
+int calibration(CvCapture *capture) {
 
   IplImage* img = cvQueryFrame(capture);
 
@@ -254,7 +247,10 @@ void calibration(CvCapture *capture) {
            actualDefects++;
          }
        }
-       displayContAndHull(maxCont, img, 1);
+       cvSetImageROI(img,cvRect(x,y,width,height));
+       displayContAndHull(maxCont, img);
+       cvResetImageROI(img);
+
        free(defect_array);
      }
    }
@@ -266,6 +262,7 @@ void calibration(CvCapture *capture) {
  c = cvWaitKey(10) & 255 ;
 
  if (c == 27) {
+   endProgram = true;
    break;
  } else if (c == 49) {
    static CvMoments* moments = new CvMoments();
@@ -327,7 +324,7 @@ cvReleaseImage(&img);
 cvReleaseImage(&thresh);*/
 }
 
-void mainLoop(CvCapture *capture)
+void mainLoop(CvCapture *capture, int fRecog)
 {
   IplImage* img = cvQueryFrame(capture);
 
@@ -341,14 +338,17 @@ void mainLoop(CvCapture *capture)
   int num_defects, actualDefects = 0;
   int c, licznik = 0;
   /*Wykrywanie twarzy*/
-  /*char *faceCascadeFilename = "haarcascade_frontalface_alt.xml"; 
   CvHaarClassifierCascade* faceCascade;
-  faceCascade = (CvHaarClassifierCascade*)cvLoad(faceCascadeFilename, 0, 0, 0);
-  if( !faceCascade ) {
-    printf("Couldn't load Face detector '%s'\n", faceCascadeFilename);
-    exit(1);
-  }*/
-  
+  if (fRecog) 
+  {
+    char *faceCascadeFilename = "haarcascade_frontalface_alt.xml"; 
+    faceCascade = (CvHaarClassifierCascade*)cvLoad(faceCascadeFilename, 0, 0, 0);
+    if( !faceCascade ) {
+      printf("Couldn't load Face detector '%s'\n", faceCascadeFilename);
+      exit(1);
+    }
+  }
+
 
   CvRect faceRect;
 
@@ -359,11 +359,14 @@ void mainLoop(CvCapture *capture)
     customThresh(thresh);
     cvCopy(thresh, tmp1);
 
-    /*faceRect = detectFaceInImage(img, faceCascade);
-    if (faceRect.width > 0) {
-     cvRectangle(img,cvPoint(faceRect.x,faceRect.y),cvPoint(faceRect.x+faceRect.width, faceRect.y+faceRect.height),(CV_RGB(255,255,0)),1);
-     cvRectangle(thresh,cvPoint(faceRect.x,faceRect.y),cvPoint(faceRect.x+faceRect.width, faceRect.y+faceRect.height),(CV_RGB(0,0,0)),CV_FILLED);
-   }*/
+    if (fRecog) {
+      faceRect = detectFaceInImage(img, faceCascade);
+      if (faceRect.width > 0) {
+       cvRectangle(img,cvPoint(faceRect.x,faceRect.y),cvPoint(faceRect.x+faceRect.width, faceRect.y+faceRect.height),(CV_RGB(255,255,0)),1);
+       cvRectangle(thresh,cvPoint(faceRect.x,faceRect.y),cvPoint(faceRect.x+faceRect.width, faceRect.y+faceRect.height),(CV_RGB(0,0,0)),CV_FILLED);
+     }
+   }
+
    maxCont = getBiggestContour(tmp1);
    if (maxCont)
    {
@@ -387,7 +390,7 @@ void mainLoop(CvCapture *capture)
             actualDefects++;
           }
         }
-        displayContAndHull(maxCont, img, 0);
+        displayContAndHull(maxCont, img);
         free(defect_array);
       }
     }
@@ -421,7 +424,8 @@ void mainLoop(CvCapture *capture)
  cvShowImage("Original Image",img);
  cvShowImage("Thresholded Image",thresh);
 
- c = cvWaitKey(10) & 255;
+ if (cvWaitKey(10) & 255 == 27)
+  break;
 }
 /*vReleaseMemStorage(&hull_st);
 cvReleaseMemStorage(&defects_st);
@@ -430,10 +434,16 @@ cvReleaseImage(&thresh);*/
 }
 int main(int argc, const char* argv[]) {
 
+  if (argc != 2) {
+    cout<<"Podaj parametr"<<endl;
+    return 1;
+  }
+
   CvCapture *capture = cvCaptureFromCAM(0);
   init_windows();
-  calibration(capture);
-  mainLoop(capture);
+  calibration(capture); 
+  if (!endProgram)
+    mainLoop(capture, atoi(argv[1]));
 
   /*cvReleaseCapture(&capture);
   cvDestroyWindow("Original Image");
