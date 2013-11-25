@@ -485,36 +485,37 @@ cvShowImage("Contours", imgCont);
 
       free(defect_array);
 
+
     }
   }
 
-
+  licznik++;
   static CvMoments* moments = new CvMoments();
   cvMoments(maxC, moments);
   static CvHuMoments* huMoments = new CvHuMoments();  
   cvGetHuMoments(moments, huMoments);
 
-  if ((abs(moveHand.hu1 - huMoments->hu1)<0.02) &&
-    (abs(moveHand.hu2 - huMoments->hu2)<0.01) &&
+  if ((abs(moveHand.hu1 - huMoments->hu1)<0.002) &&
+    (abs(moveHand.hu2 - huMoments->hu2)<0.001) &&
     (abs(moveHand.hu3 - huMoments->hu3)<0.001) &&
     (moveHand.num_def == actualDefects))
   { 
    // printf("x: %d y: %d  l: %d \n", hand_center.x, hand_center.y, licznik);
-    /*licznik++;
-    mousemove(hand_center.x,hand_center.y, licznik);*/
-    printf("MOVE!\n");
-  } else if ((abs(closeHand.hu1 - huMoments->hu1)<0.02) &&
-    (abs(closeHand.hu2 - huMoments->hu2)<0.01) &&
+    
+    //mousemove(hand_center.x,hand_center.y, licznik);
+    printf("MOVE! %d\n", licznik);
+  } else if ((abs(closeHand.hu1 - huMoments->hu1)<0.002) &&
+    (abs(closeHand.hu2 - huMoments->hu2)<0.001) &&
     (abs(closeHand.hu3 - huMoments->hu3)<0.001) &&
     (closeHand.num_def == actualDefects))
   {
-    printf("CLOSE!\n");
-  } else if ((abs(clickHand.hu1 - huMoments->hu1)<0.02) &&
-    (abs(clickHand.hu2 - huMoments->hu2)<0.01) &&
+    printf("CLOSE! %d\n", licznik);
+  } else if ((abs(clickHand.hu1 - huMoments->hu1)<0.002) &&
+    (abs(clickHand.hu2 - huMoments->hu2)<0.001) &&
     (abs(clickHand.hu3 - huMoments->hu3)<0.001) &&
     (clickHand.num_def == actualDefects))
   {
-    printf("CLICK!\n");
+    printf("CLICK! %d\n", licznik);
   }
 
   
