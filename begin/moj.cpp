@@ -36,11 +36,10 @@ bool endProgram = false;
 void init_windows() {
   //Windows for displaying images and trackbars
   cvNamedWindow("Original Image",CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("Original Image 2",CV_WINDOW_AUTOSIZE);
+
 
   cvNamedWindow("cnt",CV_WINDOW_AUTOSIZE);
   cvNamedWindow("Thresholded Image", CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("Thresholded Image 2", CV_WINDOW_AUTOSIZE);
 
 
   cvMoveWindow("cnt", 1000, 0);
@@ -249,7 +248,7 @@ int calibration(CvCapture *capture) {
 
         cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
         num_defects = defects->total;
-        for(int j=0; j<minimum(8, num_defects);j++) {
+        for(int j=0; j<num_defects;j++) {
           if(defect_array[j].depth > bound.height/10) {
             cvSetImageROI(img,cvRect(x,y,width,height));
             cvCircle( img, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
@@ -370,8 +369,7 @@ void mainLoop(CvCapture *capture, int fRecog)
     img = cvQueryFrame(capture);
     cvInRangeS(img,cvScalar(h1,s1,v1),cvScalar(h2,s2,v2),thresh);
     customThresh(thresh);
-    cvCopy(thresh, tmp1);
-
+    
     if (fRecog) {
       faceRect = detectFaceInImage(img, faceCascade);
       if (faceRect.width > 0) {
@@ -379,6 +377,7 @@ void mainLoop(CvCapture *capture, int fRecog)
        cvRectangle(thresh,cvPoint(faceRect.x,faceRect.y),cvPoint(faceRect.x+faceRect.width, faceRect.y+faceRect.height),(CV_RGB(0,0,0)),CV_FILLED);
      }
    }
+   cvCopy(thresh, tmp1);
 
    maxCont = getBiggestContour(tmp1);
    if (maxCont)
@@ -394,7 +393,7 @@ void mainLoop(CvCapture *capture, int fRecog)
 
         cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
         num_defects = defects->total;
-        for(int j=0; j<minimum(8, num_defects);j++)
+        for(int j=0; j<num_defects;j++)
         {
           if(defect_array[j].depth > bound.height/10) 
           {
@@ -411,6 +410,14 @@ void mainLoop(CvCapture *capture, int fRecog)
     cvMoments(maxCont, moments);
     static CvHuMoments* huMoments = new CvHuMoments();  
     cvGetHuMoments(moments, huMoments);
+
+    cout<<"H1:"<<huMoments->hu1<<endl;
+
+    cout<<"H2:"<<huMoments->hu2<<endl;
+
+    cout<<"H3:"<<huMoments->hu3<<endl;
+
+
 
 
     if ((abs(moveHand.hu1 - huMoments->hu1)<0.002) && (abs(moveHand.hu2 - huMoments->hu2)<0.01) &&
@@ -432,8 +439,8 @@ void mainLoop(CvCapture *capture, int fRecog)
 
  }
 
- cvShowImage("Original Image 2",img);
- cvShowImage("Thresholded Image 2",thresh);
+ cvShowImage("Original Image",img);
+ cvShowImage("Thresholded Image",thresh);
 
  if ((cvWaitKey(10) & 255) == 27)
   break;
