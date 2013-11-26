@@ -153,6 +153,14 @@ void mousemove(int x_pos, int y_pos, int licznik)
  first = false;
 
 }
+void mouse_click()
+{
+    
+        system("xdotool click 1");
+    
+}
+
+
 
 CvRect detectFaceInImage(IplImage *inputImg, CvHaarClassifierCascade* cascade)
 {
@@ -249,7 +257,7 @@ int calibration(CvCapture *capture) {
         cvCvtSeqToArray(defects, defect_array, CV_WHOLE_SEQ);
         num_defects = defects->total;
         for(int j=0; j<num_defects;j++) {
-          if(defect_array[j].depth > bound.height/10) {
+          if(defect_array[j].depth > bound.height/6) {
             cvSetImageROI(img,cvRect(x,y,width,height));
             cvCircle( img, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
             cvResetImageROI(img);
@@ -395,7 +403,7 @@ void mainLoop(CvCapture *capture, int fRecog)
         num_defects = defects->total;
         for(int j=0; j<num_defects;j++)
         {
-          if(defect_array[j].depth > bound.height/10) 
+          if(defect_array[j].depth > bound.height/6) 
           {
             cvCircle( img, *(defect_array[j].depth_point), 5, CV_RGB(0,0,255), 2, 8,0);
 
@@ -411,27 +419,28 @@ void mainLoop(CvCapture *capture, int fRecog)
     static CvHuMoments* huMoments = new CvHuMoments();  
     cvGetHuMoments(moments, huMoments);
 
-    cout<<"H1:"<<huMoments->hu1<<endl;
+//    cout<<"H1:"<<huMoments->hu1<<endl;
 
-    cout<<"H2:"<<huMoments->hu2<<endl;
+//    cout<<"H2:"<<huMoments->hu2<<endl;
 
-    cout<<"H3:"<<huMoments->hu3<<endl;
-
-
+//    cout<<"H3:"<<huMoments->hu3<<endl;
 
 
-    if ((abs(moveHand.hu1 - huMoments->hu1)<0.002) && (abs(moveHand.hu2 - huMoments->hu2)<0.01) &&
-     (abs(moveHand.hu3 - huMoments->hu3)<0.001) && (moveHand.num_def == actualDefects))
+
+
+    if ((abs(moveHand.hu1 - huMoments->hu1)<0.01) && (abs(moveHand.hu2 - huMoments->hu2)<0.01) &&
+     (abs(moveHand.hu3 - huMoments->hu3)<0.0008) && (moveHand.num_def == actualDefects))
     { 
      mousemove(hand_center.x,hand_center.y, licznik);
      printf("MOVE! %d\n", licznik);
-   } else if ((abs(closeHand.hu1 - huMoments->hu1)<0.02) && (abs(closeHand.hu2 - huMoments->hu2)<0.01) &&
-     (abs(closeHand.hu3 - huMoments->hu3)<0.001) && (closeHand.num_def == actualDefects))
+   } else if ((abs(closeHand.hu1 - huMoments->hu1)<0.08) && (abs(closeHand.hu2 - huMoments->hu2)<0.004) &&
+     (abs(closeHand.hu3 - huMoments->hu3)<0.0005) && (closeHand.num_def == actualDefects))
    {
      printf("CLOSE! %d\n", licznik);
-   } else if ((abs(clickHand.hu1 - huMoments->hu1)<0.02) && (abs(clickHand.hu2 - huMoments->hu2)<0.01) &&
+     return;
+   } else if ((abs(clickHand.hu1 - huMoments->hu1)<0.008) && (abs(clickHand.hu2 - huMoments->hu2)<0.01) &&
      (abs(clickHand.hu3 - huMoments->hu3)<0.001) && (clickHand.num_def == actualDefects))
-   {
+   { mouse_click();
      printf("CLICK! %d\n", licznik);
    }
 
