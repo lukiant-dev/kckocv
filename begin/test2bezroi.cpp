@@ -246,6 +246,7 @@ int calibration(CvCapture *capture, int fRecog) {
     }
   }
 
+  CvRect faceRect;
   while(1) {
     img = cvQueryFrame(capture);
     cvRectangle(img,cvPoint(x,y),cvPoint(x+width, y+height),(CV_RGB(255,0,255)),1);
@@ -254,6 +255,16 @@ int calibration(CvCapture *capture, int fRecog) {
    // cvResetImageROI(img);
 
     customThresh(thresh);
+
+
+    if (fRecog) {
+      faceRect = detectFaceInImage(img, faceCascade);
+      if (faceRect.width > 0) {
+       cvRectangle(img,cvPoint(faceRect.x,faceRect.y),cvPoint(faceRect.x+faceRect.width, faceRect.y+faceRect.height),(CV_RGB(255,255,0)),1);
+       cvRectangle(thresh,cvPoint(faceRect.x,faceRect.y),cvPoint(faceRect.x+faceRect.width, faceRect.y+faceRect.height),(CV_RGB(0,0,0)),CV_FILLED);
+     }
+    }
+  
     cvCopy(thresh, tmp1);
     maxCont = getBiggestContour(tmp1);
     if (maxCont) {
